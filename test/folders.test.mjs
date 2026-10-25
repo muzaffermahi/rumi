@@ -29,3 +29,8 @@ test('the worker is told the folder is its working directory and where user note
   assert.ok(p.includes('It is your working directory'));
   assert.ok(p.includes('C:\\rumi\\outputs\\t1'));
 });
+
+test('an empty path is not a folder (it must not fall back to the current directory)', async () => {
+  const {describeFolder} = await import('../lib/folders.mjs');
+  for (const p of ['', '   ', undefined, '""']) assert.equal(describeFolder(p).exists, false);
+});

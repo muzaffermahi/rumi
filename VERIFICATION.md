@@ -1,3 +1,24 @@
+# Verification — v4, 25 October 2026
+
+Runtime: Node 24.14.1; Pi SDK 1.3.0; `opencode-go/glm-5.3-flash` through Pi's shared sign-ins. Tested on a copy of the real data (port 4319), a fresh install with an empty Pi home (port 4320), and the packaged Windows build (port 4321).
+
+`npm test` (48 tests), including Rumi's Pi extension without a model: finish hands back and settles; a run without finish is asked once; research is asked for more searches first; ask_user ends the run without nudges; tools read the current run's state; the conversation shows nudges, hand-backs and questions; kinds keep shell and edit to Build; empty folder paths are rejected.
+
+`npm run probe` and `npm run verify:proof` passed: streaming, web_search, read_page, write, PowerShell, steering, finish, abort, persisted session.
+
+Against the running app:
+
+- A Write task delegated through the API called finish; the hand-back became the passage's suggestion.
+- A model told to answer in chat first ended without finish; Rumi's check made it call finish with a clean answer, summary and notes.
+- A Think task called ask_user with four options. The margin and sidebar showed *Needs you*, the card offered the options, the chosen answer continued the same session, and the task handed back. The conversation shows *Asked you*, the answer, and a *Handed back* card.
+- A Build task in a scratch project with `pi-lens` enabled ran ls, write, PowerShell and finish, and created `index.html`. pi-lens loaded without warnings, and its tools were active only in that workspace.
+- Skills: Rumi's four skills load; the skills in `~/.agents/skills` no longer reach workers unless allowed in Settings.
+- Pi packages: `pi-lens` installed into Rumi's own Pi home from Settings, and from the packaged build using its bundled npm with no system Node on PATH.
+- Setup: with Pi present, sign-ins are shared and existing providers show as connected. With an empty Pi home, Rumi uses its own sign-ins and the first-run screen appears. The DeepSeek key flow showed a masked key prompt and the ChatGPT flow showed *Open the sign-in page*; both were cancelled without entering credentials. A fresh start picks a subscription model as the default.
+- The packaged Windows zip (76 MB) unzips and serves Rumi with only its bundled Node and System32 on PATH.
+
+Not verified here: completing a real subscription sign-in, the macOS and Linux packages (built by CI only), the Start menu shortcut, the stall watchdog's automatic restart, and dialogs from third-party Pi extensions.
+
 # Verification — v2, 24 October 2026
 
 Runtime: Node 24.14.1; Pi SDK 1.3.0; `lmstudio/tiel-coder-35b-a3b` served locally. Tested on a copy of the v1 data (port 4318), then switched the real workspace to v2.

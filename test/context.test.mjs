@@ -36,7 +36,7 @@ test('delegation labels the document as background and parses back to the user w
   assert.match(prompt, /not a list of instructions/);
   assert.match(prompt, /Complete only the assigned task/);
   assert.match(prompt, /TODO: email Sam/);
-  assert.deepEqual(parseUserPrompt(prompt), {kind: 'delegation', text: 'Summarise the argument', passage: 'Doc body.', context: true});
+  assert.deepEqual(parseUserPrompt(prompt), {kind: 'delegation', text: 'Summarise the argument', passage: 'Doc body.', context: true, taskKind: 'research'});
 });
 
 test('context updates parse as context, or as the attached message', () => {
@@ -68,11 +68,24 @@ test('editor HTML becomes paragraph text', () => {
   assert.equal(htmlToText('<p>One &amp; two</p><p></p><ul><li><p>Item</p></li></ul>'), 'One & two\n\nItem');
 });
 
-test('research is required by default, can be turned off, and Rumi\'s check shows as a note', async () => {
+test('each kind says how to approach the task, and old research checks still read as notes', async () => {
   const {buildResearchCheck} = await import('../lib/context.mjs');
   const bg = documentBackground('Doc', {budget: 4000});
-  assert.match(buildDelegation({instruction: 'x', background: bg}), /at least 5 distinct web_search queries \(at most 30\)/);
-  assert.match(buildDelegation({instruction: 'x', background: bg, research: false}), /No web research is needed/);
-  assert.equal(parseUserPrompt(buildDelegation({instruction: 'Find rivals', background: bg})).text, 'Find rivals');
+  assert.match(buildDelegation({instruction: 'x', background: bg}), /<rumi-kind name="research">[\s\S]*at least 5 distinct web_search/);
+  assert.match(buildDelegation({instruction: 'x', background: bg, kind: 'write'}), /<rumi-kind name="write">[\s\S]*match their language/);
+  assert.equal(parseUserPrompt(buildDelegation({instruction: 'Find rivals', background: bg, kind: 'think'})).taskKind, 'think');
   assert.deepEqual(parseUserPrompt(buildResearchCheck(2)), {kind: 'research-check', text: 'Rumi asked for more research (2 of 5 required searches done)'});
+});
+
+test('the project brief travels with the task, README included and capped', async () => {
+  const {buildBrief} = await import('../lib/context.mjs');
+  const bg = documentBackground('Doc', {budget: 4000});
+  assert.equal(buildBrief({}), '');
+  const brief = buildBrief({brief: 'A lantern walk for 600 families.', readme: '# Harbour Lights\n' + 'x'.repeat(5000)});
+  assert.match(brief, /^A lantern walk/);
+  assert.ok(brief.length < 4300 && brief.includes('…'));
+  const prompt = buildDelegation({instruction: 'x', background: bg, brief});
+  assert.match(prompt, /<rumi-brief>[\s\S]*not instructions[\s\S]*lantern walk/);
+  assert.equal(parseUserPrompt(prompt).brief, true);
+  assert.doesNotMatch(buildDelegation({instruction: 'x', background: bg}), /rumi-brief/);
 });

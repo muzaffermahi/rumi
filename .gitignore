@@ -5,3 +5,4 @@ data/
 pi-proof.json
 rumi-browser.png
 *.log
+release/

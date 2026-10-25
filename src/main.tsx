@@ -3,12 +3,13 @@ import {createRoot} from 'react-dom/client';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {useEditor} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import {api, type Task, type Model, type Settings, type Workspace} from './api';
+import {api, type Task, type Model, type Settings, type Workspace, type Kinds} from './api';
 import {DocumentPane, plainText, type DelegateRequest} from './DocumentPane';
 import {TaskPane} from './TaskPane';
 import {Sidebar} from './Sidebar';
 import {Markdown} from './Markdown';
 import {TaskLink, afterPassage} from './taskLink';
+import {Connect} from './Connect';
 import './style.css';
 
 const stored = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -34,6 +35,9 @@ function App() {
   const [wid, setWid] = useState(stored('rumi.workspace') || 'global');
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [kinds, setKinds] = useState<Kinds>({});
+  const [ready, setReady] = useState(true);       // a model is connected and chosen
+  const [showModels, setShowModels] = useState(false);
   const docWid = useRef('');   // workspace the editor's content belongs to; saves always go there
   const saveTimer = useRef<number | undefined>(undefined);
   const saving = useRef<Promise<unknown>>(Promise.resolve());
@@ -96,14 +100,15 @@ function App() {
     events.onmessage = e => {
       const s = JSON.parse(e.data);
       if (s.workspace.id !== wid) { setWid(s.workspace.id); return; } // that workspace is gone; the server fell back
-      setTasks(s.tasks); setSettings(s.settings); setWorkspace(s.workspace); setWorkspaces(s.workspaces); setConnected(true);
+      setTasks(s.tasks); setSettings(s.settings); setWorkspace(s.workspace); setWorkspaces(s.workspaces); setKinds(s.kinds); setReady(s.ready); setConnected(true);
     };
     events.onerror = () => setConnected(false);
     return () => events.close();
   }, [wid]);
 
+  // The model list changes when something is connected or the default changes.
+  useEffect(() => { api('/models').then(m => setModels(m.models)).catch(e => setError(e.message)); }, [ready, settings?.defaultModel, showModels]);
   useEffect(() => {
-    api('/models').then(m => setModels(m.models)).catch(e => setError(e.message));
     // `rumi` in a terminal opens /?folder=<that folder>: switch to that folder's workspace.
     const fromTerminal = new URLSearchParams(location.search).get('folder');
     if (fromTerminal) { history.replaceState(null, '', location.pathname); openFolder(fromTerminal); }
@@ -164,12 +169,13 @@ function App() {
     </div>}
     {showList && <Sidebar tasks={tasks} openId={openId} onOpen={open} collapsed={collapsed && !narrow} onToggle={toggle}
       onNew={() => { setView('doc'); setOpenSignal(n => n + 1); }} settings={settings} models={models} connected={connected} onError={setError} fresh={fresh}
-      workspace={workspace} workspaces={workspaces} onSwitch={switchTo} onOpenFolder={openFolder}/>}
+      workspace={workspace} workspaces={workspaces} onSwitch={switchTo} onOpenFolder={openFolder} onModels={() => setShowModels(true)}/>}
     <div className={'doc-wrap' + (showDoc ? '' : ' away')} aria-hidden={!showDoc}>
       <DocumentPane editor={editor} empty={empty} saveStatus={saveStatus} models={models} defaultModel={settings?.defaultModel || ''} openSignal={openSignal} onDelegate={onDelegate} onError={setError}
-        workspaceName={workspace?.name || ''} tasks={tasks} onOpenTask={open} onInsertNear={insert}/>
+        workspaceName={workspace?.name || ''} tasks={tasks} onOpenTask={open} onInsertNear={insert} kinds={kinds} lastKind={settings?.lastKind || 'research'} hasFolder={!!workspace?.path}/>
     </div>
     {showTask && <TaskPane key={task.id} task={task} back={narrow} onClose={() => setOpenId('')} onInsert={md => insert(md, task.documentWide ? undefined : task.id)} onError={setError}/>}
+    {(showModels || (settings && !ready)) && <Connect firstRun={!ready} onClose={() => setShowModels(false)} onError={setError}/>}
     {(error || notice) && <div className={'toast' + (error ? ' bad' : '')} role={error ? 'alert' : 'status'}>
       {error || notice}<button className="ghost" onClick={() => { setError(''); setNotice(''); }} aria-label="Dismiss">×</button>
     </div>}

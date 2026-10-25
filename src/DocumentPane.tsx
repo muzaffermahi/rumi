@@ -1,11 +1,11 @@
 import React, {useEffect, useRef, useState, memo} from 'react';
 import {EditorContent, Editor} from '@tiptap/react';
 import {TextSelection} from '@tiptap/pm/state';
-import type {Model, Task} from './api';
+import type {Model, Task, Kinds} from './api';
 import {linkPassage} from './taskLink';
 import {Margin} from './Margin';
 
-export type DelegateRequest = {selection: string; offset?: number; instruction: string; model?: string; research: boolean};
+export type DelegateRequest = {selection: string; offset?: number; instruction: string; model?: string; kind: string};
 type Snapshot = {text: string; from: number; to: number; offset: number};
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -26,15 +26,18 @@ type Props = {
   editor: Editor | null; empty: boolean; saveStatus: string; models: Model[]; defaultModel: string;
   openSignal: number; onDelegate: (r: DelegateRequest) => Promise<string | null>; onError: (m: string) => void;
   workspaceName: string; tasks: Task[]; onOpenTask: (id: string) => void; onInsertNear: (markdown: string, taskId: string) => void;
+  kinds: Kinds; lastKind: string; hasFolder: boolean;
 };
 
-export const DocumentPane = memo(function DocumentPane({editor, empty, saveStatus, models, defaultModel, openSignal, onDelegate, onError, workspaceName, tasks, onOpenTask, onInsertNear}: Props) {
+export const DocumentPane = memo(function DocumentPane({editor, empty, saveStatus, models, defaultModel, openSignal, onDelegate, onError, workspaceName, tasks, onOpenTask, onInsertNear, kinds, lastKind, hasFolder}: Props) {
   const canvas = useRef<HTMLDivElement>(null);
   const [anchor, setAnchor] = useState<{top: number; left: number} | null>(null);
   const [popover, setPopover] = useState<{snap: Snapshot; top: number; left: number} | null>(null);
   const [instruction, setInstruction] = useState('');
   const [model, setModel] = useState('');
-  const [research, setResearch] = useState(true);
+  const [kind, setKind] = useState('');
+  // The kind starts as the one used last; Build is only offered in a project folder.
+  const kindNow = kind && (hasFolder || !kinds[kind]?.needsFolder) ? kind : kinds[lastKind] && (hasFolder || !kinds[lastKind].needsFolder) ? lastKind : 'research';
   const [tick, setTick] = useState(0); // re-measures the margin after edits and resizes
   useEffect(() => {
     if (!editor) return;
@@ -97,7 +100,7 @@ export const DocumentPane = memo(function DocumentPane({editor, empty, saveStatu
     if (!popover || busy) return;
     setBusy(true);
     const {snap} = popover;
-    const id = await onDelegate({selection: snap.text, offset: snap.offset, instruction, model: model || undefined, research});
+    const id = await onDelegate({selection: snap.text, offset: snap.offset, instruction, model: model || undefined, kind: kindNow});
     setBusy(false);
     if (!id) return;
     // The passage stays linked to its task: highlighted, with the task's status beside it.
@@ -143,6 +146,11 @@ export const DocumentPane = memo(function DocumentPane({editor, empty, saveStatu
         {anchor && !popover && <button className="float-delegate" style={anchor} onMouseDown={e => e.preventDefault()} onClick={open}>Delegate <kbd>{shortcut}</kbd></button>}
         {popover && <div className="popover" style={{top: popover.top, left: popover.left}} onKeyDown={e => { if (e.key === 'Escape' && !e.defaultPrevented) close(); }}>
           <div className="pop-scope">{passage ? `“${passage.slice(0, 120)}${passage.length > 120 ? '…' : ''}”` : 'Whole document'}</div>
+          <div className="kinds" role="radiogroup" aria-label="Kind of help">
+            {Object.entries(kinds).filter(([, k]) => hasFolder || !k.needsFolder).map(([key, k]) =>
+              <button key={key} role="radio" aria-checked={kindNow === key} className={'kind' + (kindNow === key ? ' on' : '')} title={k.hint} onClick={() => setKind(key)}>{k.label}</button>)}
+          </div>
+          <div className="kind-hint">{kinds[kindNow]?.hint}</div>
           <input ref={input} aria-label="Task instruction" placeholder="What should the worker do? (optional)" value={instruction}
             onChange={e => setInstruction(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); } }}/>
           <div className="pop-row">
@@ -152,7 +160,6 @@ export const DocumentPane = memo(function DocumentPane({editor, empty, saveStatu
             </select>
             <button className="primary" disabled={busy} onClick={submit}>{busy ? 'Delegating…' : 'Delegate'}</button>
           </div>
-          <label className="pop-check"><input type="checkbox" checked={research} onChange={e => setResearch(e.target.checked)}/> Research the web first (5–30 searches)</label>
           <small>Enter to delegate · Esc to keep writing</small>
         </div>}
       </div>

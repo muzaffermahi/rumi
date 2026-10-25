@@ -1,10 +1,13 @@
 import React, {useEffect, useLayoutEffect, useRef, useState} from 'react';
-import {api, fileUrl, since, statusLabel, type Task, type Queued} from './api';
+import {api, fileUrl, since, statusOf, waitingOnUser, type Task, type Queued, type Handback, type Question} from './api';
 import {Markdown} from './Markdown';
 import {Working} from './Working';
+import {HandbackView} from './Handback';
+import {Ask} from './Ask';
 
 type Item = {role: 'user' | 'assistant' | 'note'; kind?: string; text: string; passage?: string | null; context?: boolean;
-  tools?: {name: string; args: string; result?: string; isError?: boolean}[]; offers?: Offer[]; error?: string; aborted?: boolean; model?: string; legacy?: boolean};
+  tools?: {name: string; args: string; result?: string; isError?: boolean}[]; offers?: Offer[]; error?: string; aborted?: boolean; model?: string; legacy?: boolean;
+  handback?: Handback; question?: Question; taskKind?: string; brief?: boolean};
 type Offer = {file: string; title?: string};
 type Reading = Offer & {text?: string};
 type Supplied = {at: string; kind: string; revision: number; shortened: boolean; length?: number; text: string; note?: string};
@@ -18,12 +21,21 @@ function UserMessage({item, queued}: {item: Item | Queued; queued?: string}) {
     {item.passage && <blockquote>{item.passage}</blockquote>}
     {item.text && <p>{item.text}</p>}
     {item.context && <span className="ctx-chip">{item.kind === 'delegation' ? 'with document background' : 'with updated document'}</span>}
+    {'brief' in item && item.brief && <span className="ctx-chip">with project brief</span>}
   </div>;
 }
 
 function Reply({item, task, onInsert, onOpen}: {item: Item; task: Task; onInsert: (md: string) => void; onOpen: (o: Offer) => void}) {
+  // A reply that handed back shows the hand-back; the worker's closing line after finish is left out.
+  const chat = item.handback ? '' : item.text;
   return <div className="msg agent">
-    {item.text && <div className="md"><Markdown text={item.text} taskId={task.id} files={task.files}/></div>}
+    {chat && <div className="md"><Markdown text={chat} taskId={task.id} files={task.files}/></div>}
+    {item.handback && <div className="handback-card">
+      <div className="handback-head">Handed back{item.handback.summary && <> · <span>{item.handback.summary}</span></>}</div>
+      <HandbackView handback={item.handback} taskId={task.id} files={task.files}/>
+      <button className="link-btn" onClick={() => onInsert(item.handback!.answer)}>Insert into document</button>
+    </div>}
+    {item.question && <div className="asked"><span className="tag">Asked you</span><p>{item.question.question}</p></div>}
     {!!item.tools?.length && <details className="tools"><summary>{item.tools.length} tool {item.tools.length === 1 ? 'call' : 'calls'} · {[...new Set(item.tools.map(t => t.name))].join(', ')}</summary>
       {item.tools.map((t, i) => <div key={i} className={'tool' + (t.isError ? ' bad' : '')}><b>{t.name}</b> <code>{t.args}</code>{t.result !== undefined && <pre>{t.result}</pre>}</div>)}
     </details>}
@@ -33,7 +45,7 @@ function Reply({item, task, onInsert, onOpen}: {item: Item; task: Task; onInsert
     </div>)}
     {item.error && <div className="msg-error">{item.error}</div>}
     {item.aborted && !item.text && <div className="event">Stopped</div>}
-    {item.text && <button className="link-btn" onClick={() => onInsert(item.text)}>Insert into document</button>}
+    {chat && !item.question && <button className="link-btn" onClick={() => onInsert(chat)}>Insert into document</button>}
   </div>;
 }
 
@@ -97,9 +109,10 @@ export function TaskPane({task, onClose, onInsert, onError, back}: {task: Task; 
       {back && <button className="ghost" onClick={onClose}>← Tasks</button>}
       <div className="task-title">
         <h2 title={task.title}>{task.title}</h2>
-        <div className="quiet"><span className={'dot ' + task.status}/> {statusLabel[task.status] || task.status} · {task.model}{task.projectDir && <> · <span title={task.projectDir}>▣ {task.projectDir.split(/[\\/]/).pop()}</span></>}</div>
+        <div className="quiet"><span className={'dot ' + (waitingOnUser(task) ? 'needs-you' : task.status)}/> {statusOf(task)} · <span className="kind-chip">{task.kind}</span> · {task.model}{task.projectDir && <> · <span title={task.projectDir}>▣ {task.projectDir.split(/[\\/]/).pop()}</span></>}</div>
       </div>
       {waiting && <button className="ghost danger" onClick={() => act(() => api(`/tasks/${task.id}/stop`, 'POST'))}>Stop</button>}
+      {task.stalled && <button className="ghost" title="Abort the current step and start it again" onClick={() => act(() => api(`/tasks/${task.id}/restart`, 'POST'))}>Restart step</button>}
       {['interrupted', 'failed'].includes(task.status) && <button className="ghost" onClick={() => act(() => api(`/tasks/${task.id}/resume`, 'POST'))}>Resume</button>}
       {!back && <button className="ghost close" onClick={onClose} aria-label="Close task">×</button>}
     </header>
@@ -114,10 +127,14 @@ export function TaskPane({task, onClose, onInsert, onError, back}: {task: Task; 
     <div className="conv" hidden={!!reading} ref={scroller} onScroll={e => { const el = e.currentTarget; stick.current = el.scrollHeight - el.scrollTop - el.clientHeight < 40; }}>
       {!conv && <div className="quiet pad">Opening…</div>}
       {conv?.items.map((item, i) => item.role === 'user' ? <UserMessage key={i} item={item}/>
-        : item.role === 'note' ? <div key={i} className="event">{item.text}</div>
+        : item.role === 'note' ? <div key={i} className={'event' + (item.kind === 'check' ? ' check' : '')}>{item.text}</div>
         : <Reply key={i} item={item} task={task} onInsert={onInsert} onOpen={openDoc}/>)}
       {live && <div className="msg agent streaming"><div className="md"><Markdown text={live}/></div></div>}
       {running && <Working activity={task.activity} tool={task.activeTool}/>}
+      {task.stalled && <div className="stalled">No progress for a while; the model or a tool may be stuck. <button className="link-btn" onClick={() => act(() => api(`/tasks/${task.id}/restart`, 'POST'))}>Restart this step</button> or keep waiting.</div>}
+      {task.notice && running && <div className="event">{task.notice.message}</div>}
+      {waitingOnUser(task) && <div className="ask-panel"><span className="tag">Needs you</span><Ask key={task.dialog?.id || task.question?.question} task={task} onError={onError}/></div>}
+      {!!task.warnings?.length && <div className="msg-error">Some Pi packages could not load: {task.warnings.join('; ')}</div>}
       {task.queued.map((q, i) => <UserMessage key={'q' + i} item={q} queued={queueLabel}/>)}
       {task.error && <div className="msg-error">{task.error}</div>}
       {!!task.files.length && <div className="files"><span className="quiet">Output files</span>
@@ -135,7 +152,7 @@ export function TaskPane({task, onClose, onInsert, onError, back}: {task: Task; 
     </div>
     <footer className="composer">
       {task.pendingContext && <div className="ctx-note">Updated document will be sent with your next message.</div>}
-      <textarea aria-label="Message" rows={2} value={text} placeholder={running ? 'Steer this task… (delivered after its current step)' : 'Continue the conversation…'}
+      <textarea aria-label="Message" rows={2} value={text} placeholder={running ? 'Steer this task… (delivered after its current step)' : task.status === 'needs-you' ? 'Answer, or say anything else…' : 'Continue the conversation…'}
         onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}/>
       <div className="composer-row">
         <button className="ghost" title="Send the current document to this task as background" onClick={() => act(() => api(`/tasks/${task.id}/context`, 'POST'))}>Update document context</button>
