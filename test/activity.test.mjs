@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {newActivity, track} from '../lib/activity.mjs';
+import {newActivity, track} from '../server/activity.mjs';
 
 test('activity follows thinking, tool steps with partial output, and results', () => {
   const a = newActivity();
@@ -21,5 +21,8 @@ test('activity follows thinking, tool steps with partial output, and results', (
 test('only the last six steps are kept', () => {
   const a = newActivity();
   for (let i = 0; i < 9; i++) track(a, {type: 'tool_execution_start', toolCallId: 'c' + i, toolName: 'read', args: {path: `f${i}.ts`}});
-  assert.deepEqual(a.steps.map(s => s.detail), ['f3.ts', 'f4.ts', 'f5.ts', 'f6.ts', 'f7.ts', 'f8.ts']);
+  assert.deepEqual(
+    a.steps.map(s => s.detail),
+    ['f3.ts', 'f4.ts', 'f5.ts', 'f6.ts', 'f7.ts', 'f8.ts'],
+  );
 });

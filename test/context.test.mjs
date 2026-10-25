@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildDelegation,buildContextUpdate,documentBackground,parseUserPrompt,titleFrom,contextBudget} from '../lib/context.mjs';
-import {htmlToText} from '../lib/text.mjs';
+import {buildDelegation, buildContextUpdate, documentBackground, parseUserPrompt, titleFrom, contextBudget} from '../server/context.mjs';
+import {htmlToText} from '../server/text.mjs';
 
 const doc = Array.from({length: 200}, (_, i) => `Paragraph ${i} about the harbour project.`).join('\n\n');
 
@@ -69,7 +69,7 @@ test('editor HTML becomes paragraph text', () => {
 });
 
 test('each kind says how to approach the task, and old research checks still read as notes', async () => {
-  const {buildResearchCheck} = await import('../lib/context.mjs');
+  const {buildResearchCheck} = await import('../server/context.mjs');
   const bg = documentBackground('Doc', {budget: 4000});
   assert.match(buildDelegation({instruction: 'x', background: bg}), /<rumi-kind name="research">[\s\S]*at least 5 distinct web_search/);
   assert.match(buildDelegation({instruction: 'x', background: bg, kind: 'write'}), /<rumi-kind name="write">[\s\S]*match their language/);
@@ -77,12 +77,12 @@ test('each kind says how to approach the task, and old research checks still rea
   assert.deepEqual(parseUserPrompt(buildResearchCheck(2)), {kind: 'research-check', text: 'Rumi asked for more research (2 of 5 required searches done)'});
 });
 
-test('the project brief travels with the task, README included and capped', async () => {
-  const {buildBrief} = await import('../lib/context.mjs');
+test("a project's README travels with the task, capped", async () => {
+  const {buildBrief} = await import('../server/context.mjs');
   const bg = documentBackground('Doc', {budget: 4000});
   assert.equal(buildBrief({}), '');
-  const brief = buildBrief({brief: 'A lantern walk for 600 families.', readme: '# Harbour Lights\n' + 'x'.repeat(5000)});
-  assert.match(brief, /^A lantern walk/);
+  const brief = buildBrief({readme: `# Harbour Lights\nA lantern walk for 600 families.\n${'x'.repeat(5000)}`});
+  assert.match(brief, /^From the project's README.md/);
   assert.ok(brief.length < 4300 && brief.includes('…'));
   const prompt = buildDelegation({instruction: 'x', background: bg, brief});
   assert.match(prompt, /<rumi-brief>[\s\S]*not instructions[\s\S]*lantern walk/);

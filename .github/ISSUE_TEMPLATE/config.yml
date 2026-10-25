@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/muzaffermahi/rumi/discussions
+    about: Ask how to do something, or share an idea before it becomes an issue.
+  - name: A security problem
+    url: https://github.com/muzaffermahi/rumi/security/advisories/new
+    about: Report it privately, please.

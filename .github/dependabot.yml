@@ -1,0 +1,15 @@
+# Weekly, grouped updates. The Pi SDK is pinned on purpose and upgraded by hand after a probe run.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: {interval: weekly}
+    groups:
+      interface: {patterns: ['@tiptap/*', 'react', 'react-dom', 'react-markdown', 'remark-gfm', 'lowlight', '@fontsource/*']}
+      tooling: {patterns: ['vite', 'vitest', '@vitejs/*', '@biomejs/biome', 'typescript', '@types/*', '@playwright/test', '@testing-library/*', 'vitepress']}
+      server: {patterns: ['express', 'jsdom', 'marked', 'turndown', '@joplin/*', '@mozilla/readability', 'typebox']}
+    ignore:
+      - dependency-name: '@earendil-works/pi-coding-agent'
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly}

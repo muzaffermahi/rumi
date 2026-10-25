@@ -1,0 +1,13 @@
+/* Printing (or saving as PDF): just the document, in black on white. */
+@media print {
+  :root { --bg: #fff; --paper: #fff; --ink: #000; --body: #111; --muted: #444; }
+  body, html, #root { overflow: visible !important; height: auto !important; background: #fff; }
+  .app { display: block; height: auto; }
+  .sidebar, .doc-bar, .task-pane, .mark-badge, .answer-card, .toasts, .topbar, .outline, .history, .coach, .float-delegate, .popover, .banner, .skip { display: none !important; }
+  .doc-scroll { overflow: visible !important; }
+  .canvas { padding: 0 !important; max-width: none; }
+  .doc-title { font-size: 26pt; }
+  .tiptap { font-size: 11.5pt; line-height: 1.6; }
+  .tiptap .task-link { background: none !important; }
+  .doc-wrap.away { visibility: visible !important; }
+}

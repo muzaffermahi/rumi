@@ -1,0 +1,193 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/muzaffermahi/rumi/main/schema/config.schema.json",
+  "title": "Rumi settings",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "defaultModel": {
+      "type": "string",
+      "description": "Model for new tasks, as provider/model (for example anthropic/claude-sonnet-4-5).",
+      "default": ""
+    },
+    "maxWorkers": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "How many tasks run at once.",
+      "default": 2
+    },
+    "sameFolder": {
+      "type": "boolean",
+      "description": "Let two tasks work in the same project folder at the same time.",
+      "default": false
+    },
+    "reasoning": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "off"
+      ],
+      "description": "auto: more thinking for Think tasks, less for Write. off: faster, for small local models.",
+      "default": "auto"
+    },
+    "userSkills": {
+      "type": "boolean",
+      "description": "Also offer your personal skills in ~/.agents/skills to workers.",
+      "default": false
+    },
+    "theme": {
+      "type": "string",
+      "enum": [
+        "system",
+        "light",
+        "dark"
+      ],
+      "description": "Colour theme.",
+      "default": "system"
+    },
+    "notifications": {
+      "type": "boolean",
+      "description": "Show a browser notification when a task finishes or needs you while Rumi is in the background.",
+      "default": false
+    },
+    "approvals": {
+      "type": "string",
+      "enum": [
+        "off",
+        "after-web",
+        "always"
+      ],
+      "description": "When Build tasks must ask before running a shell command: never, after the task has read a web page (default), or always.",
+      "default": "after-web"
+    },
+    "checkpoints": {
+      "type": "boolean",
+      "description": "Snapshot the project folder before each Build task so its changes can be reviewed and reverted.",
+      "default": true
+    },
+    "worktrees": {
+      "type": "boolean",
+      "description": "Run Build tasks in a separate git worktree and branch, merged when you choose. Git repositories only.",
+      "default": false
+    },
+    "allowPrivateNetwork": {
+      "type": "boolean",
+      "description": "Let read_page open addresses on this computer or your local network. Off protects against prompt injection.",
+      "default": false
+    },
+    "updateCheck": {
+      "type": "boolean",
+      "description": "Check GitHub once a day for a newer version. Nothing about you is sent.",
+      "default": true
+    },
+    "search": {
+      "type": "object",
+      "description": "Web search for workers.",
+      "additionalProperties": false,
+      "properties": {
+        "providers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "exa",
+              "duckduckgo",
+              "bing",
+              "brave",
+              "tavily",
+              "searxng"
+            ]
+          },
+          "description": "Engines queried together and merged. Bing is used as a fallback when all return nothing.",
+          "default": [
+            "exa",
+            "duckduckgo"
+          ]
+        },
+        "braveApiKey": {
+          "type": "string",
+          "description": "Brave Search API key (https://brave.com/search/api).",
+          "default": ""
+        },
+        "tavilyApiKey": {
+          "type": "string",
+          "description": "Tavily API key (https://tavily.com).",
+          "default": ""
+        },
+        "searxngUrl": {
+          "type": "string",
+          "description": "Base URL of a SearXNG instance with the JSON format enabled, for example http://localhost:8888.",
+          "default": ""
+        }
+      },
+      "default": {}
+    },
+    "mcpServers": {
+      "type": "object",
+      "description": "MCP servers workers can use, in the same format as Claude Desktop, Cursor and Pi. Turn each one on per workspace.",
+      "additionalProperties": {
+        "type": "object"
+      },
+      "default": {}
+    },
+    "shortcuts": {
+      "type": "object",
+      "description": "Keyboard shortcuts. Mod is Ctrl, or Cmd on macOS.",
+      "additionalProperties": false,
+      "properties": {
+        "delegate": {
+          "type": "string",
+          "description": "Delegate the selection.",
+          "default": "Mod+Enter"
+        },
+        "palette": {
+          "type": "string",
+          "description": "Open the command palette.",
+          "default": "Mod+K"
+        },
+        "newDocument": {
+          "type": "string",
+          "description": "New document.",
+          "default": "Mod+Alt+N"
+        },
+        "focusMode": {
+          "type": "string",
+          "description": "Toggle focus mode.",
+          "default": "Mod+Shift+F"
+        },
+        "shortcuts": {
+          "type": "string",
+          "description": "Show keyboard shortcuts.",
+          "default": "Shift+?"
+        }
+      },
+      "default": {}
+    },
+    "packages": {
+      "type": "array",
+      "description": "Pi packages installed in Rumi (managed from Settings).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    }
+  }
+}

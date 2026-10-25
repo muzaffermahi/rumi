@@ -6,3 +6,8 @@ pi-proof.json
 rumi-browser.png
 *.log
 release/
+test-results/
+playwright-report/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+*.tsbuildinfo

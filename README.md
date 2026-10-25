@@ -1,153 +1,103 @@
 <div align="center">
 
+<img src="public/favicon.svg" width="64" alt="" />
+
 # rumi
 
-**Keep writing. Let agents work in the margins.**
+**Stop prompting and waiting. Keep thinking, and let agents work in the margins.**
 
-Rumi is a writing workspace for people who make things.<br/>
-When a passage needs research, a draft or a fix, hand it to an agent and keep going.<br/>
-The answer comes back beside the passage it belongs to, whenever you're ready to look.
+[![CI](https://github.com/muzaffermahi/rumi/actions/workflows/ci.yml/badge.svg)](https://github.com/muzaffermahi/rumi/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-6d8c61)](LICENSE)
+![Local-first](https://img.shields.io/badge/local--first-no%20telemetry-a9b79c)
+![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-3a5240)
 
-<br/>
-
-<img src="docs/linked-passages.jpg" alt="Rumi: a document with two delegated passages, highlighted, with each task's status in the margin" width="820"/>
-
-<br/>
-<br/>
-
-![local-first](https://img.shields.io/badge/local--first-3a5240?style=flat-square)
-![no API keys for search](https://img.shields.io/badge/web%20search-no%20API%20keys-6d8c61?style=flat-square)
-![agents by Pi](https://img.shields.io/badge/agents-Pi%20SDK-a9b79c?style=flat-square)
-![node 22+](https://img.shields.io/badge/node-22%2B-dedfd6?style=flat-square)
+<img src="docs/suggestion.png" alt="A document in Rumi: one passage highlighted and delegated, the worker's answer waiting beside it" width="860" />
 
 </div>
 
----
+## The problem with prompt, wait, read, repeat
 
-## Who it's for
+Working with AI today mostly means taking turns. You write a prompt, then you wait. You read what comes back, write the next prompt, and wait again. Each turn pulls your attention out of your own thinking and into the agent's. Run three agents and you're juggling three chat windows. Your ideas end up scattered across conversations, and the clearest picture of what you're doing lives in a transcript you'll never reread.
 
-Rumi is for people who do ambitious work and think by writing: founders shaping a product, researchers working through a question, engineers planning a project before and while they build it, anyone starting something from scratch.
+**Rumi turns this around.** You stay in one document: your plan, your argument, your notes, whatever you're thinking through. When a passage needs research, a draft, a critique or a code change, you hand just that passage to a worker with one keystroke and **keep writing**. No turn to wait for. The answer comes back beside the passage it belongs to, and you take it in when you reach that point, on your schedule.
 
-You don't have to be a hardcore programmer, and you don't want another chat window. You want one place where your thinking lives, and help that doesn't pull you out of it.
+## What changes when you work this way
 
-## The idea
+- **You stay at the centre.** The document is yours and it's the real work. Agents serve it. Nothing they produce lands in it unless you put it there.
+- **Your thinking gets clearer.** Writing *is* thinking, and you never stop doing it. Delegating forces you to say exactly what you need from each passage, and the answers arrive where they make sense, not in a separate feed.
+- **Managing many agents becomes calm.** Each task is pinned to the words it's about, so the document is the dashboard. You can see at a glance what's running, what's done and what needs you, without a wall of agent chatter.
+- **The document is the brief.** Every worker reads the whole document as context, so saying what you're making, who it's for and how you like things done at the top briefs every task at once.
+- **Workers you can leave alone.** They're told you aren't watching. They assume and note instead of stopping to ask, hand back material written for your document rather than a chat reply, and ask one clear question only when they truly can't continue.
 
-Most AI tools run on a loop: prompt, wait, read, prompt again. Your attention goes to the agent and whatever it produces. Rumi turns that around.
+## How it feels
 
-- **Your writing is the work.** The document is both the centre and the end product. Agents serve it. Their answers are raw material you choose to use, not the thing you're making.
-- **Delegate, don't wait.** Handing off a passage takes one keystroke and puts you straight back on the page. Nothing opens by itself, and nothing takes your focus.
-- **Calm, not a control room.** Delegated work is pinned to the passages it came from. You can see what's running and what's waiting at a glance, without a wall of agent chatter.
-- **Honest by default.** You can see exactly what each agent was sent, which model it ran on and what it did. Rumi never swaps your model for another, and never reports a check that didn't happen.
+1. **Write.** Get your thinking onto the page.
+2. **Delegate.** Select a passage and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>↵</kbd>). Pick **Research**, **Write**, **Think** or **Build**, or a saved instruction like *Fact-check* or *Shorten*. Add a line about what you want, or don't.
+3. **Keep writing.** The passage gets a soft highlight and its task's status sits in the margin. Delegate the next thing, and the next.
+4. **Review when you're ready.** The margin says *1 suggestion*. Insert the answer below the passage, **replace the passage with a word-by-word diff**, take only the part you select, or dismiss it. Every change is one undo away, and Rumi saves a version before touching your text.
 
-## The loop
+<img src="docs/delegate.png" alt="The Delegate box: kinds of help, saved instructions and a model picker, opened over a selected passage" width="860" />
 
-**1. Write.** Get your thinking onto the page: the plan, the open questions, the half-formed ideas.
+## Install
 
-**2. Delegate.** Select a passage and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>↵</kbd> on macOS), or click the Delegate button that appears next to the selection. Pick the kind of help (**Research**, **Write**, **Think**, or **Build** in a project folder), say what you want, or leave it blank. With nothing selected, the task covers the whole document.
+**macOS and Linux**
 
-**3. Keep writing.** The passage gets a soft highlight, and its task's status sits in the margin. Move on to the next thought, and delegate again if you like. Tasks run in the background. If a worker truly can't go on without you, its passage says *Needs you*, and you answer right there.
+```bash
+curl -fsSL https://github.com/muzaffermahi/rumi/releases/latest/download/install.sh | sh
+```
 
-**4. Review when you're ready.** A finished task hands back an answer written for your document, not a chat reply. It waits beside its passage as a suggestion, with its sources and assumptions folded underneath. Insert it below the passage, dismiss it, or open the conversation to push back.
+**Windows** (PowerShell)
 
-<img src="docs/suggestion.jpg" alt="A finished task's answer shown as a suggestion under its passage" width="820"/>
+```powershell
+irm https://github.com/muzaffermahi/rumi/releases/latest/download/install.ps1 | iex
+```
 
-## Get started
-
-**Without a terminal.** Download the zip for your computer from [Releases](https://github.com/muzaffermahi/rumi/releases), unzip it, and double-click **Rumi**. Your browser opens on a short setup screen:
-
-- **Sign in with a subscription you already have**: ChatGPT, Claude Pro/Max, SuperGrok or X Premium, GitHub Copilot, Kimi Code, OpenRouter. A browser tab opens and you sign in; nothing is copied by hand.
-- **Or paste an API key** (OpenCode Go and Zen, OpenRouter, Anthropic, OpenAI, Google, DeepSeek, xAI and more).
-- **Or use a model on this computer** with LM Studio or Ollama. Rumi finds them if they're running.
-- **Already use Pi?** Rumi offers to share Pi's sign-ins, so whatever you connected there works here too.
-
-Nothing else to install: the download carries its own copy of Node.
-
-**From source.** You need [Node 22+](https://nodejs.org).
+**From source** (Node 22.19+)
 
 ```bash
 git clone https://github.com/muzaffermahi/rumi.git
-cd rumi
-npm ci && npm run build
-npm link            # installs the `rumi` command
+cd rumi && npm ci && npm run build && npm link
 ```
 
-Then, from any project:
+Then run `rumi` in any folder. Rumi opens in your browser, in that folder's workspace. The first screen connects a model: sign in with a subscription you already pay for (ChatGPT, Claude, Copilot, Grok and more), paste an API key, or use LM Studio, Ollama or any OpenAI-compatible server on your computer. If you use [Pi](https://pi.dev), Rumi can share its sign-ins.
 
-```bash
-cd ~/code/my-project
-rumi
-```
-
-Rumi starts in the background and opens in your browser, inside that project. `rumi stop` shuts it down.
-
-**From Pi.** `pi install git:github.com/muzaffermahi/rumi` adds a `/rumi` command that opens Rumi on the folder you're in, and Rumi's writing skills to Pi.
-
-## Workers you can leave alone
-
-Delegating only works if you can stop watching. Rumi's workers are built for that.
-
-- **They know where they are.** Every worker is told how Rumi works: you are writing, not watching; assume and note rather than stop and ask; hand back material, not chat. Each task gets the project's brief (see *This project*) and, in a code folder, its `README` and `AGENTS.md`.
-- **They hand back properly.** A task is done when the worker calls *finish* with an answer, a one-line summary, sources and assumptions. If a worker stops without it, Rumi asks it once to finish properly. Research tasks that ran too few searches are sent back to search more.
-- **They ask when they must.** A worker that can't go on without you asks one question, with suggested answers, and pauses. Its slot goes to other tasks until you reply.
-- **They don't get lost.** Model errors are retried with backoff. A worker that stops making progress is marked *stalled* with a *Restart step* button; after ten silent minutes Rumi restarts the step itself, once.
-- **Each kind gets only the tools it needs.** Research, Write and Think tasks can search the web and write files in their task folder, but can't run commands or edit your project. Build tasks can, inside the project folder.
-
-## In more detail
-
-**Workspaces.** Every project folder has its own document, brief and tasks, stored in `<project>/.rumi/` and ignored by git. There's also a Global workspace for everything else. Switch from the top of the sidebar, or just run `rumi` in another folder.
-
-**This project.** A few lines under the workspace name saying what the project is, who it's for and what matters. Every task in the workspace gets them.
-
-**Edits are noticed.** Rewrite a delegated passage and its badge says *changed since delegated*. Nothing is sent until you press *Send new version*.
-
-**One conversation per task.** Messages steer a running task or continue a finished one, in the same Pi session. Tool use stays folded away. To see what the agent is doing (its thinking, the command it's running and that command's latest output), click the live *Working…* line.
-
-**Context you can check.** Each task gets the instruction, the passage, and your whole document, clearly labelled as background rather than instructions. Long documents are cut to the text around the passage, and the agent is told so. *Context supplied* shows exactly what was sent.
-
-**Research without keys.** Web search merges Exa's free endpoint with DuckDuckGo. Research tasks plan first and run 5 to 30 distinct searches.
-
-**Your models.** Connect them in *Settings → Models and sign-ins*. Pick a default, override it for a single task, and run up to three tasks at a time. *Reasoning* can be turned off for small local models.
-
-**Pi packages.** Rumi runs on [Pi](https://pi.dev), so community packages work in it: extensions that add tools, and skills that teach workers a way of working. Add one by name in Settings (packages you installed in Pi are suggested). Rumi keeps its own copy, and you turn it on per workspace, so a code-checking package like `pi-lens` can serve your code projects without touching your writing. Rumi ships four skills of its own: a research brief, writing in your voice, a sharp critique, and turning notes into a plan. Your personal skills in `~/.agents/skills` are offered too if you allow it.
-
-**Your Pi setup stays yours.** Rumi keeps its own Pi home (`pi/` inside its data folder) and never loads or changes your Pi settings, extensions or skills. The only thing it can share is sign-ins, and only if you choose *Share with Pi*.
-
-## Under the hood
+## What's inside
 
 | | |
 |---|---|
-| Editor | React + [TipTap](https://tiptap.dev). Links between passages and tasks are a mark stored in the document itself |
-| Agents | [Pi SDK](https://pi.dev): sessions, steering, compaction, retries, cancellation, skills, packages, sign-ins |
-| Storage | SQLite + Pi's JSONL sessions, per workspace |
-| Live updates | Server-sent events, batched |
-| Search | Exa (free, keyless) + DuckDuckGo HTML, Bing fallback; Readability for pages |
+| **Writing** | Many documents per workspace, tables, checklists, highlighted code, images, outline, focus mode, a slash menu, Markdown import and export, version history, dark mode |
+| **Delegating** | Research (searches the web, no API key needed, cites sources), Write, Think, Build, saved instructions, any connected model per task |
+| **Reviewing** | Answers beside their passage; insert, replace with a diff, take a part, or dismiss; run a task again on another model and compare |
+| **Build tasks** | In a project folder: edit files and run commands, checkpointed so you can review the diff and revert in one click, or run on their own git branch |
+| **Staying in control** | Commands after a web read wait for your approval; workers can't reach your computer or local network; non-Build tasks can't change your project |
+| **Extending** | Your own task kinds and saved instructions as Markdown files, Pi packages and MCP servers per workspace, Brave, Tavily or SearXNG search |
+| **Getting around** | Command palette (<kbd>Ctrl</kbd>+<kbd>K</kbd>), keyboard shortcuts (<kbd>?</kbd>), `rumi` in a terminal, `rumi delegate` from scripts |
 
-The code follows the loop:
+<img src="docs/dark.png" alt="Rumi in dark mode" width="860" />
 
-```text
-lib/workspaces.mjs   write: workspaces, documents, the project brief
-lib/context.mjs      delegate: what a worker is sent
-lib/worker.mjs       work: the queue, Pi sessions, hand-backs, questions, stalls
-lib/live.mjs         review: what the page shows, updated live
-lib/connections.mjs  models and sign-ins, from the browser
-runtime.mjs          Rumi's Pi host: its own Pi home, models, skills, packages
-pi/                  Rumi as a Pi package: worker prompt, kinds, tools, skills, the /rumi command
-server.mjs           the HTTP API
-src/                 the interface (document, margin, task pane, setup)
-bin/rumi.mjs         the `rumi` command
-scripts/package.mjs  the no-terminal download (Node included), built for each platform by CI
+## The command line
+
+```bash
+rumi                      # open Rumi on this folder
+rumi delegate "Find three recent studies on spaced repetition" --kind research --wait
+rumi status               # running? which port, which models
+rumi doctor               # check everything Rumi needs, with fixes
+rumi setup                # connect local models, open the sign-in screen
+rumi update               # update the way you installed it
+rumi stop
 ```
 
-`npm test` runs the test suite. `npm run probe` runs a real model through search, files, the shell, steering, the hand-back and cancellation; `npm run verify:proof` checks the evidence.
+`rumi --help` lists everything. Settings live in `~/.rumi/config.json` (with a [JSON schema](schema/config.schema.json)); `rumi config set theme dark` changes one.
 
-## Good to know
+## Privacy
 
-- **Local and trusted.** Agents run on your computer. Research, Write and Think tasks can't run commands, but Build tasks can, and Pi packages you enable run with your permissions. A task folder is a working location, not a sandbox.
-- **No time limits.** A task runs until it finishes or you press Stop. After a restart, unfinished tasks wait for you to resume them.
-- **Same-folder tasks run one at a time** unless you allow side-by-side runs in Settings.
-- **Tested on Windows.** The folder picker uses Windows' native dialog. Elsewhere, paste a path or run `rumi` in the folder.
+Rumi runs on your computer. No account, no server of ours, no telemetry. Your documents go only to the model you choose, as context for the tasks you delegate. The local server only answers this computer's browser, with an access token. [SECURITY.md](SECURITY.md) explains what each kind of task can touch.
+
+## Contributing
+
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and [ARCHITECTURE.md](ARCHITECTURE.md). The whole test suite runs against a scripted model, so it needs no API keys. See [CHANGELOG.md](CHANGELOG.md) for what's new.
 
 <div align="center">
 <br/>
-<sub>Built on <a href="https://pi.dev">Pi</a>. Named after the poet who wrote about the field beyond right and wrong. Here, it's the space between thinking and delegating.</sub>
+<sub>MIT licensed. Built on <a href="https://pi.dev">Pi</a>. Named after the poet who wrote about the field beyond right and wrong; here, it's the space between thinking and delegating.</sub>
 </div>

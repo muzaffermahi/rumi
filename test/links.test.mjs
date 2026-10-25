@@ -1,10 +1,10 @@
-// Runs the real editor schema in Node (Node strips the TypeScript types of src/taskLink.ts).
+// Runs the real editor schema in Node (Node strips the TypeScript types of web/taskLink.ts).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {getSchema} from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import {EditorState, TextSelection} from '@tiptap/pm/state';
-import {TaskLink, linkedRanges, sameText} from '../src/taskLink.ts';
+import {TaskLink, linkedRanges, sameText} from '../web/taskLink.ts';
 
 const schema = getSchema([StarterKit, TaskLink]);
 const p = text => schema.node('paragraph', null, text ? [schema.text(text)] : []);
@@ -16,7 +16,8 @@ function link(state, from, to, taskId) {
 
 test('a linked passage is found again after edits elsewhere, and edits inside it are noticed', () => {
   let state = EditorState.create({schema, doc: docOf('Intro.', 'Who are my competitors?', 'Outro.')});
-  const start = 9, end = start + 'Who are my competitors?'.length; // inside the second paragraph
+  const start = 9,
+    end = start + 'Who are my competitors?'.length; // inside the second paragraph
   state = link(state, start, end, 't1');
   // Typing before the passage moves it but keeps it linked.
   state = state.apply(state.tr.insertText('New opening. ', 1));

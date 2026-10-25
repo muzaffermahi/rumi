@@ -1,43 +1,108 @@
-# Builds the ready-to-run downloads (Node, npm, Rumi and its dependencies in one zip) for Windows, macOS and
-# Linux. A tag like v0.4.0 publishes them on the GitHub release; a manual run keeps them as workflow artifacts.
+# Releases. release-please keeps a release pull request open with the next version and its changelog (from
+# conventional commit messages); merging it tags the release, which builds the downloads for Windows, macOS
+# (Apple silicon and Intel) and Linux, attaches them with checksums, publishes rumi-app to npm, and writes the
+# Homebrew and Scoop manifests.
 name: Release
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
+  id-token: write
 
 jobs:
+  release-please:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
   package:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest, macos-13, ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
       - run: npm ci
       - run: npm test
       - run: npm run build
       - run: npm run package
-      - name: Attach to the release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            release/*.zip
-            release/*.tar.gz
-      - name: Keep as an artifact
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v4
+      - run: node scripts/smoke-package.mjs
+        shell: bash
+      - uses: actions/upload-artifact@v4
         with:
           name: rumi-${{ matrix.os }}
           path: |
             release/*.zip
             release/*.tar.gz
+            release/*.sha256
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    # Optional secrets: without them the release still gets its downloads, and npm and the taps are skipped.
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Package-manager manifests
+        run: node scripts/manifests.mjs "${GITHUB_REF_NAME#v}"
+      - name: Attach the downloads to the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.zip
+            release/*.tar.gz
+            release/*.sha256
+            release/rumi.rb
+            release/rumi.json
+            install/install.sh
+            install/install.ps1
+      - name: Publish to npm
+        if: ${{ env.NPM_TOKEN != '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm ci
+          npm publish --provenance --access public
+      - name: Update the Homebrew tap and Scoop bucket
+        if: ${{ env.TAP_TOKEN != '' }}
+        run: |
+          for repo in homebrew-rumi scoop-rumi; do
+            git clone "https://x-access-token:${TAP_TOKEN}@github.com/muzaffermahi/${repo}.git" "/tmp/${repo}"
+          done
+          mkdir -p /tmp/homebrew-rumi/Formula /tmp/scoop-rumi/bucket
+          cp release/rumi.rb /tmp/homebrew-rumi/Formula/rumi.rb
+          cp release/rumi.json /tmp/scoop-rumi/bucket/rumi.json
+          for repo in homebrew-rumi scoop-rumi; do
+            cd "/tmp/${repo}"
+            git config user.name "rumi-release" && git config user.email "rumi-release@users.noreply.github.com"
+            git add -A && git commit -m "rumi ${GITHUB_REF_NAME}" && git push || true
+            cd -
+          done

@@ -1,24 +1,62 @@
 {
-  "name": "rumi",
-  "version": "0.4.0",
-  "private": true,
+  "name": "rumi-app",
+  "version": "0.5.0",
   "description": "A quiet place to write, with agents working beside your words.",
-  "type": "module",
   "keywords": [
     "pi-package",
     "writing",
-    "agents"
+    "agents",
+    "ai",
+    "editor",
+    "local-first",
+    "research",
+    "llm"
   ],
+  "homepage": "https://github.com/muzaffermahi/rumi#readme",
+  "bugs": {
+    "url": "https://github.com/muzaffermahi/rumi/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muzaffermahi/rumi.git"
+  },
+  "license": "MIT",
+  "author": "Muzaffer Mahi Can",
+  "type": "module",
   "bin": {
     "rumi": "bin/rumi.mjs"
   },
+  "files": [
+    "bin",
+    "server",
+    "pi",
+    "dist",
+    "schema",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
-    "dev": "node server.mjs",
+    "dev": "node --disable-warning=ExperimentalWarning server/app.mjs",
+    "dev:web": "vite",
     "build": "vite build",
-    "probe": "node probe.mjs",
-    "verify:proof": "node verify-proof.mjs",
-    "test": "node --test test/*.test.mjs",
-    "package": "node scripts/package.mjs"
+    "start": "node bin/rumi.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.mjs",
+    "test:web": "vitest run",
+    "test:e2e": "playwright test",
+    "test:all": "npm test && npm run test:web && npm run test:e2e",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "check": "npm run lint && npm run typecheck && npm test && npm run test:web",
+    "schema": "node scripts/schema.mjs",
+    "icons": "node scripts/icons.mjs",
+    "probe": "node scripts/probe.mjs",
+    "verify:proof": "node scripts/verify-proof.mjs",
+    "package": "node scripts/package.mjs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "prepublishOnly": "npm run build"
   },
   "pi": {
     "extensions": [
@@ -33,19 +71,41 @@
   },
   "dependencies": {
     "@earendil-works/pi-coding-agent": "1.3.0",
+    "@joplin/turndown-plugin-gfm": "1.0.61",
     "@mozilla/readability": "0.6.0",
     "express": "5.1.0",
     "jsdom": "26.1.0",
+    "marked": "15.0.12",
+    "turndown": "7.2.0",
     "typebox": "1.3.27"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.4",
+    "@fontsource/inter": "5.2.6",
+    "@fontsource/jetbrains-mono": "5.2.6",
+    "@fontsource/lora": "5.2.6",
+    "@playwright/test": "1.55.1",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "16.3.0",
+    "@tiptap/extension-code-block-lowlight": "3.7.2",
+    "@tiptap/extension-image": "3.7.2",
+    "@tiptap/extension-table": "3.7.2",
     "@tiptap/react": "3.7.2",
     "@tiptap/starter-kit": "3.7.2",
+    "@tiptap/suggestion": "3.7.2",
+    "@types/node": "24.5.2",
+    "@types/react": "19.1.13",
+    "@types/react-dom": "19.1.9",
+    "@types/turndown": "5.0.5",
+    "@vitejs/plugin-react": "5.0.3",
+    "lowlight": "3.3.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",
     "react-markdown": "10.1.0",
     "remark-gfm": "4.0.1",
     "typescript": "5.9.3",
-    "vite": "7.1.7"
+    "vite": "7.1.7",
+    "vitepress": "1.6.4",
+    "vitest": "3.2.4"
   }
 }

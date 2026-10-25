@@ -1,0 +1,6 @@
+# Text files are stored with LF; the installer must keep LF to run under sh.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.jpg binary

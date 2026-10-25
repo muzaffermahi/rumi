@@ -1,0 +1,52 @@
+/* Colours and type. Every colour in Rumi comes from here, so light and dark stay in step.
+   Theme: <html data-theme="light|dark">, or neither to follow the system. */
+:root {
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --serif: 'Lora', Georgia, serif;
+  --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  color-scheme: light;
+
+  --bg: #f8f7f2; --side: #efefe7; --panel: #f3f3ec; --paper: #fbfaf5; --raised: #fbfbf6;
+  --line: #e3e2d6; --line-soft: #eae9dd; --line-strong: #bfc7b2;
+  --hover: #e6e8dd; --selected: #e1e6d6; --tint: #e5eccd; --bubble: #e6e9dc; --chip: #eceee4; --field: #f1f3e9;
+  --ink: #22251f; --body: #3d4238; --muted: #6b6f60; --soft: #93968a;
+  --accent: #39523e; --accent-ink: #ffffff; --accent-soft: #4d5f50; --focus: rgba(57, 82, 62, 0.18);
+  --good: #6d8c61; --warn: #c58670; --warn-bg: #f4e3d8; --warn-ink: #7d4a37; --danger: #9a5a43;
+  --wait: #c9a55a; --wait-bg: #f3e6c4; --wait-ink: #8a6a2c; --wait-panel: #fbf6e8; --wait-line: #e6d6ae; --stall-bg: #f8efd9; --stall-ink: #7d6331;
+  --code-bg: #ebeae0; --highlight: #dfe8cc; --highlight-hover: #d6e1bf; --selection: #dbe3c3; --changed: #f0dfb8;
+  --toast: #2f4234; --toast-ink: #f3f4ec; --toast-bad: #7d4a37;
+  --shadow: 0 8px 24px rgba(20, 20, 19, 0.08); --shadow-strong: 0 18px 50px rgba(20, 20, 19, 0.14); --overlay: rgba(34, 37, 31, 0.28);
+  --diff-add: #dcebcb; --diff-add-ink: #2f4a26; --diff-del: #f4dcd2; --diff-del-ink: #7d3a27;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #1b1d19; --side: #20231e; --panel: #222520; --paper: #262a24; --raised: #2a2e27;
+    --line: #353a31; --line-soft: #2d312a; --line-strong: #4b5444;
+    --hover: #2f342c; --selected: #354131; --tint: #33402c; --bubble: #2f352b; --chip: #2c3229; --field: #2a2f27;
+    --ink: #eceee6; --body: #d3d6cb; --muted: #a0a697; --soft: #7d8376;
+    --accent: #a3c293; --accent-ink: #15200f; --accent-soft: #b5c9aa; --focus: rgba(163, 194, 147, 0.25);
+    --good: #8fb47f; --warn: #d69a83; --warn-bg: #3d2a22; --warn-ink: #f0c2ae; --danger: #e5a18a;
+    --wait: #d8b46a; --wait-bg: #4a3d1f; --wait-ink: #e8c987; --wait-panel: #2e2a1d; --wait-line: #5a4a24; --stall-bg: #3a321d; --stall-ink: #e5cf98;
+    --code-bg: #2f332c; --highlight: #3b4b30; --highlight-hover: #47593a; --selection: #43573a; --changed: #5a4a24;
+    --toast: #3b4f3f; --toast-ink: #eef1e6; --toast-bad: #7a3f2c;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.35); --shadow-strong: 0 18px 50px rgba(0, 0, 0, 0.5); --overlay: rgba(0, 0, 0, 0.5);
+    --diff-add: #2c4125; --diff-add-ink: #c8e3b8; --diff-del: #4a2a22; --diff-del-ink: #f1bfae;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #1b1d19; --side: #20231e; --panel: #222520; --paper: #262a24; --raised: #2a2e27;
+  --line: #353a31; --line-soft: #2d312a; --line-strong: #4b5444;
+  --hover: #2f342c; --selected: #354131; --tint: #33402c; --bubble: #2f352b; --chip: #2c3229; --field: #2a2f27;
+  --ink: #eceee6; --body: #d3d6cb; --muted: #a0a697; --soft: #7d8376;
+  --accent: #a3c293; --accent-ink: #15200f; --accent-soft: #b5c9aa; --focus: rgba(163, 194, 147, 0.25);
+  --good: #8fb47f; --warn: #d69a83; --warn-bg: #3d2a22; --warn-ink: #f0c2ae; --danger: #e5a18a;
+  --wait: #d8b46a; --wait-bg: #4a3d1f; --wait-ink: #e8c987; --wait-panel: #2e2a1d; --wait-line: #5a4a24; --stall-bg: #3a321d; --stall-ink: #e5cf98;
+  --code-bg: #2f332c; --highlight: #3b4b30; --highlight-hover: #47593a; --selection: #43573a; --changed: #5a4a24;
+  --toast: #3b4f3f; --toast-ink: #eef1e6; --toast-bad: #7a3f2c;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35); --shadow-strong: 0 18px 50px rgba(0, 0, 0, 0.5); --overlay: rgba(0, 0, 0, 0.5);
+  --diff-add: #2c4125; --diff-add-ink: #c8e3b8; --diff-del: #4a2a22; --diff-del-ink: #f1bfae;
+}
