@@ -4,8 +4,8 @@
   "description": "A quiet place to write, with agents working beside your words.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8f7f2",
-  "theme_color": "#39523e",
+  "background_color": "#ffffff",
+  "theme_color": "#1f7a68",
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },

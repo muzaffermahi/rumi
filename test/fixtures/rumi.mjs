@@ -8,14 +8,14 @@ import {fileURLToPath} from 'node:url';
 const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-export async function startRumi({modelPort, port = 43000 + Math.floor(Math.random() * 4000), config = {}} = {}) {
+export async function startRumi({modelPort, provider = 'fake', modelId = 'scripted', port = 43000 + Math.floor(Math.random() * 4000), config = {}} = {}) {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rumi-test-'));
   fs.mkdirSync(path.join(data, 'pi'), {recursive: true});
   fs.writeFileSync(
     path.join(data, 'pi', 'connections.json'),
-    JSON.stringify({mode: 'rumi', local: [{id: 'fake', name: 'Fake', baseUrl: `http://127.0.0.1:${modelPort}/v1`, apiKey: 'none', models: ['scripted']}]}),
+    JSON.stringify({mode: 'rumi', local: [{id: provider, name: provider, baseUrl: `http://127.0.0.1:${modelPort}/v1`, apiKey: 'none', models: [modelId]}]}),
   );
-  fs.writeFileSync(path.join(data, 'config.json'), JSON.stringify({defaultModel: 'fake/scripted', updateCheck: false, maxWorkers: 2, ...config}));
+  fs.writeFileSync(path.join(data, 'config.json'), JSON.stringify({defaultModel: `${provider}/${modelId}`, updateCheck: false, maxWorkers: 2, ...config}));
   const child = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(appDir, 'server', 'app.mjs')], {
     cwd: appDir,
     env: {...process.env, RUMI_DATA: data, RUMI_PORT: String(port), RUMI_NO_UPDATE_CHECK: '1', RUMI_MODEL_RETRIES: '0'},
@@ -24,7 +24,7 @@ export async function startRumi({modelPort, port = 43000 + Math.floor(Math.rando
   let log = '';
   child.stdout.on('data', d => (log += d));
   child.stderr.on('data', d => (log += d));
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 300; i++) {
     await sleep(150);
     if (child.exitCode !== null) throw Error(`Rumi exited:\n${log}`);
     try {
@@ -32,6 +32,9 @@ export async function startRumi({modelPort, port = 43000 + Math.floor(Math.rando
       if (r.ok) break;
     } catch {}
   }
+  if (!fs.existsSync(path.join(data, 'server.json')))
+    throw Error(`Rumi did not start in 45 s:
+${log}`);
   const {token} = JSON.parse(fs.readFileSync(path.join(data, 'server.json'), 'utf8'));
   const base = `http://127.0.0.1:${port}`;
   async function api(url, {method = 'GET', body, auth = true, headers = {}} = {}) {

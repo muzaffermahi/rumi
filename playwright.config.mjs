@@ -1,5 +1,5 @@
 // End-to-end tests: a real browser against a real Rumi server and the scripted fake model (no API keys).
-// `npm run test:e2e`. SCREENSHOTS=1 also refreshes the README screenshots in docs/.
+// `npm run test:e2e`. `SCREENSHOTS=1 npm run test:e2e -- screenshots` refreshes the README screenshots in docs/.
 import {defineConfig, devices} from '@playwright/test';
 
 export default defineConfig({

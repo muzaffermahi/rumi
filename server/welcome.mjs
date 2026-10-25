@@ -1,7 +1,7 @@
 // The document a new Rumi opens on: a short tour that ends with your first delegated task.
 export const WELCOME_TITLE = 'Welcome to Rumi';
 
-export const WELCOME_HTML = `<h1>Welcome to Rumi</h1>
+export const WELCOME_HTML = `
 <p>Rumi is a place to write, with agents working beside your words. You write; when a passage needs research, a draft or a second opinion, you hand it to a worker and keep going. The answer comes back next to the passage it belongs to.</p>
 <h2>Try it now</h2>
 <p>Select the paragraph below, then press <code>Ctrl+Enter</code> (<code>⌘+Enter</code> on a Mac) or click <b>Delegate</b>. Choose <b>Research</b> and press Enter.</p>

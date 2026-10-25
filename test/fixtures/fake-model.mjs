@@ -16,6 +16,36 @@ const WELCOME_ANSWER = {
   notes: 'Sources: Boice, R. (1990) *Professors as Writers*; Silvia, P. (2007) *How to Write a Lot*.',
 };
 
+// Answers for the demo document the README screenshots are taken from (e2e/screenshots.spec.mjs).
+const DEMO_ANSWERS = [
+  [
+    'The club will meet',
+    {
+      answer:
+        'The club meets on the first Thursday of each month at the town library, 7–8:30 pm. Each month we read one short book or a handful of essays, chosen by a member in turn, so nobody needs to buy much and newcomers can join any month.',
+      summary: 'Tighter, with the details a newcomer needs',
+      assumptions: ['The library room is free on first Thursdays'],
+    },
+  ],
+  [
+    'How do other reading clubs',
+    {
+      answer:
+        '- **Keep it small.** Groups of 8–12 give everyone time to speak; larger clubs split into tables.\n- **Rotate the choice.** Letting each member pick in turn keeps the list varied and shares the work.\n- **Offer a way in.** A short first read and a few printed questions make the first evening easy for new members.\n- **Meet somewhere free.** Libraries often lend rooms to reading groups at no cost.',
+      summary: 'Four practices from established reading clubs',
+      notes: 'Sources: library reading-group guides and organisers’ write-ups (demo data).',
+    },
+  ],
+  [
+    'Risks',
+    {
+      answer:
+        'The biggest risk is attendance fading after the first few months. Plan for it: confirm the next date at the end of each meeting, keep a short list of members who can host if the library room falls through, and check in after three months on whether the format still suits people.',
+      summary: 'Attendance is the main risk; three ways to plan for it',
+    },
+  ],
+];
+
 const lastUser = messages => [...messages].reverse().find(m => m.role === 'user');
 const text = c => (typeof c === 'string' ? c : (c || []).map(p => p.text || '').join(''));
 
@@ -42,6 +72,7 @@ function decide(body) {
     return {tool: 'ask_user', args: {question: 'Formal or casual?', options: ['Formal', 'Casual'], why: 'The tone changes everything.'}};
   if (task.includes('[build]') && tools.has('write')) return {tool: 'write', args: {path: 'hello.txt', content: 'hello from the fake model\n'}};
   if (tools.has('finish') && passage.includes('three habits')) return {tool: 'finish', args: WELCOME_ANSWER};
+  for (const [key, args] of DEMO_ANSWERS) if (tools.has('finish') && passage.includes(key)) return {tool: 'finish', args};
   if (tools.has('finish'))
     return {tool: 'finish', args: {answer: `FAKE ANSWER: ${passage.slice(0, 200)}`, summary: 'A fake answer', assumptions: ['This is a test']}};
   return {text: 'FAKE REPLY'};

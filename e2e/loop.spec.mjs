@@ -17,12 +17,6 @@ const open = async page => {
   await page.goto(`${rumi.base}/?token=${rumi.token}`);
   await expect(page.locator('.tiptap')).toBeVisible();
 };
-// Waits for cards to finish fading in, so the pictures are sharp.
-const shot = async (page, name) => {
-  if (!process.env.SCREENSHOTS) return;
-  await page.waitForTimeout(500);
-  await page.screenshot({path: `docs/${name}.png`});
-};
 
 test('a page without the access token is locked', async ({browser}) => {
   const fresh = await browser.newContext();
@@ -42,14 +36,12 @@ test('first run opens the welcome tour, and a delegated passage comes back to in
   await expect(box).toBeVisible();
   await box.getByRole('radio', {name: 'Write'}).click();
   await box.getByLabel('Task instruction').fill('Answer it briefly');
-  await shot(page, 'delegate');
   await box.getByRole('button', {name: 'Delegate', exact: true}).click();
   // The passage is highlighted and keeps its task; the answer arrives in the margin.
   await expect(page.locator('.tiptap .task-link')).toHaveCount(1);
   await page.getByRole('button', {name: '1 suggestion'}).click();
   const card = page.getByRole('dialog', {name: /Suggestion from/});
   await expect(card).toContainText('Write at the same time each day');
-  await shot(page, 'suggestion');
   await card.getByRole('button', {name: 'Insert below'}).click();
   await expect(page.locator('.tiptap')).toContainText('Keep the bar low');
   // One undo takes it out again.
@@ -99,7 +91,6 @@ test('settings: switch to dark, and the whole page follows', async ({page}) => {
   await page.getByRole('radio', {name: 'Dark'}).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.keyboard.press('Escape');
-  await shot(page, 'dark');
   await page.getByRole('button', {name: 'Settings'}).click();
   await page.getByRole('button', {name: 'Appearance'}).click();
   await page.getByRole('radio', {name: 'Light'}).click();
