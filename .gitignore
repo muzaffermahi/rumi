@@ -1,0 +1,7 @@
+node_modules/
+dist/
+data/
+.rumi/
+pi-proof.json
+rumi-browser.png
+*.log

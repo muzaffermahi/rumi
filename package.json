@@ -1,0 +1,31 @@
+{
+  "name": "rumi",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "build": "vite build",
+    "probe": "node probe.mjs",
+    "verify:proof": "node verify-proof.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "1.3.0",
+    "@mozilla/readability": "0.6.0",
+    "@tiptap/react": "3.7.2",
+    "@tiptap/starter-kit": "3.7.2",
+    "express": "5.1.0",
+    "jsdom": "26.1.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
+    "typebox": "1.3.27",
+    "typescript": "5.9.3",
+    "vite": "7.1.7"
+  },
+  "bin": {
+    "rumi": "bin/rumi.mjs"
+  },
+  "description": "A quiet place to write, with agents working beside your words."
+}

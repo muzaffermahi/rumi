@@ -1,0 +1,10 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const p=JSON.parse(fs.readFileSync('pi-proof.json','utf8'));
+assert(p.streamed>0,'No streamed text');
+assert(p.answer.includes('STEERING_CONFIRMED'),'Steering not delivered');
+for(const tool of ['web_search','read_page','write','powershell'])assert(p.events.some(e=>e.type==='tool_execution_end'&&e.toolName===tool&&!e.isError),`${tool} did not succeed`);
+assert(p.events.some(e=>e.type==='tool_execution_end'&&e.isError&&JSON.stringify(e.result).includes('aborted')),'No aborted tool evidence');
+assert(fs.existsSync(p.sessionFile),'Pi session not persisted');
+assert(fs.readFileSync('data/outputs/proof/proof.txt','utf8').includes('https://'),'Output has no source');
+console.log('PASS: real streaming, search, extraction, file, execution, steering, cancellation and Pi persistence');
