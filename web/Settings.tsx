@@ -87,7 +87,7 @@ function Models({settings, models, save, onConnect}: {settings: S; models: Model
   return (
     <section>
       <h2>Models</h2>
-      <p>Workers run on a model you already have: a subscription, an API key, or a model on this computer. Rumi never swaps your model for another.</p>
+      <p>Workers run on a model you already have: an API key, a subscription, or a model on this computer. Rumi never swaps your model for another.</p>
       <Row title="Default model" hint="Used for new tasks. You can pick another for a single task in the Delegate box.">
         <div style={{minWidth: 260}}>
           <ModelPicker models={models} value={settings.defaultModel} onChange={ref => ref && save({defaultModel: ref})} label="Default model" />

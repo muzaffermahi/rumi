@@ -73,7 +73,13 @@ git clone https://github.com/muzaffermahi/rumi.git
 cd rumi && npm ci && npm run build && npm link
 ```
 
-Then run `rumi` in any folder. Rumi opens in your browser, in that folder's workspace. The first screen connects a model: sign in with a subscription you already pay for (ChatGPT, Claude, Copilot, Grok and more), paste an API key, or use LM Studio, Ollama or any OpenAI-compatible server on your computer. If you use [Pi](https://pi.dev), Rumi can share its sign-ins.
+Then run `rumi` in any folder. Rumi opens in your browser, in that folder's workspace. The first screen connects a model, whichever you prefer:
+
+- **An API key** from Anthropic (Claude), OpenAI, OpenRouter, Google and many more. You pay the provider for what you use.
+- **A subscription you already pay for:** sign in with ChatGPT, GitHub Copilot, Grok and others. (Claude subscriptions work only in Anthropic's own apps, so for Claude, use an API key.)
+- **A model on your own computer** with Ollama, LM Studio or any OpenAI-compatible server. Free and fully private.
+
+If you use [Pi](https://pi.dev), Rumi can share its sign-ins.
 
 ## What's inside
 

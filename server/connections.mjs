@@ -5,15 +5,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import * as host from './runtime.mjs';
 
-// Subscriptions first, then the API-key providers people most often have. Anything already connected is shown too.
-const SUBSCRIPTIONS = ['openai', 'anthropic', 'xai', 'github-copilot', 'kimi-coding', 'openrouter', 'meta'];
+// API keys first, then the subscriptions that may be used from other apps (ChatGPT, Copilot…), then local models.
+// Claude subscriptions are not offered: Anthropic's terms keep them to Claude Code and Claude.ai (see runtime.mjs);
+// Claude is available here with an Anthropic API key. Anything already connected is shown too.
+const SUBSCRIPTIONS = ['openai', 'github-copilot', 'xai', 'kimi-coding', 'openrouter', 'meta'];
 const KEY_PROVIDERS = [
+  'anthropic',
+  'openai',
+  'openrouter',
+  'google',
   'opencode-go',
   'opencode',
-  'openrouter',
-  'openai',
-  'anthropic',
-  'google',
   'xai',
   'deepseek',
   'groq',
@@ -41,6 +43,8 @@ export async function status() {
     apiKey: p.auth?.apiKey?.login ? p.auth.apiKey.name : null,
     connected: models.some(m => m.provider === p.id),
     stored: stored.has(p.id),
+    // Signed in with a subscription Rumi may not use (see runtime.mjs): shown with a note, its models left out.
+    note: host.blockedSubscription(p.id) ? host.SUBSCRIPTION_NOTE : null,
     models: models.filter(m => m.provider === p.id).length,
   });
   const all = rt.getProviders().map(describe);
@@ -51,7 +55,7 @@ export async function status() {
     piHome: host.userPiDir,
     subscriptions: SUBSCRIPTIONS.map(id => byId.get(id)).filter(p => p?.oauth),
     keys: KEY_PROVIDERS.map(id => byId.get(id)).filter(p => p?.apiKey),
-    connected: all.filter(p => p.connected),
+    connected: all.filter(p => p.connected || p.note),
     local: await host.detectLocal(),
     models,
   };
@@ -73,6 +77,7 @@ const view = L => ({id: L.id, provider: L.provider, type: L.type, state: L.state
 export function startLogin(provider, type, onDone) {
   if (!host.runtime.getProvider(provider)) throw Error(`Unknown provider ${provider}.`);
   if (!['oauth', 'api_key'].includes(type)) throw Error('Unknown sign-in type.');
+  if (type === 'oauth' && host.SUBSCRIPTION_NOT_ALLOWED.has(provider)) throw Error(host.SUBSCRIPTION_NOTE);
   for (const L of logins.values()) if (L.state === 'running') L.cancel();
   const controller = new AbortController();
   const L = {id: randomUUID(), provider, type, state: 'running', events: [], prompt: null, error: null, waiting: null, cancel: () => controller.abort()};

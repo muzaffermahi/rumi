@@ -45,6 +45,9 @@ The release that turns Rumi from a prototype into a tool you can install, trust 
 - Research, Write and Think tasks can no longer write files in your project, only in their task folder.
 - Sign-in and settings files are written readable only by you.
 
+### Models
+- Setup leads with API keys, then ChatGPT and Copilot sign-in, then local models. Claude subscription sign-in is no longer offered, and Claude models signed in with a subscription (for example through shared Pi sign-ins) are not used: Anthropic's terms allow Claude subscriptions only in Claude Code and Claude.ai. Claude works with an Anthropic API key.
+
 ### Fixes
 - Local models that report token usage no longer fail with "Cannot read properties of undefined (reading 'tiers')".
 - Keys typed right after naming a new document no longer land in its title.

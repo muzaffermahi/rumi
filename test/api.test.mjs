@@ -175,3 +175,12 @@ test('Build tasks need a project folder', async () => {
   assert.equal(r.status, 400);
   assert.match(r.body.error, /need a project folder/);
 });
+
+test("Claude subscription sign-in is refused (Anthropic's terms); an Anthropic API key is offered", async () => {
+  const r = await rumi.api('/connections/login', {method: 'POST', body: {provider: 'anthropic', type: 'oauth'}});
+  assert.equal(r.status, 400);
+  assert.match(r.body.error, /Claude Code and Claude\.ai/);
+  const setup = (await rumi.api('/setup')).body;
+  assert.ok(!setup.subscriptions.some(p => p.id === 'anthropic'), 'no Claude sign-in button');
+  assert.equal(setup.keys[0].id, 'anthropic', 'API keys lead with Anthropic');
+});

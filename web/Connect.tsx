@@ -10,6 +10,7 @@ type Provider = {
   connected: boolean;
   stored: boolean;
   models: number;
+  note?: string | null; // why a connected sign-in can't be used here
 };
 type Local = {id: string; name: string; baseUrl: string; running: boolean; models: string[]; connected: boolean; added: boolean};
 type Setup = {
@@ -109,46 +110,16 @@ export function Connect({firstRun, onClose, onError}: {firstRun: boolean; onClos
         />
       )}
 
-      {st.piInstalled && (
-        <section className="cx-section">
-          <h3>Your Pi sign-ins</h3>
-          <p className="quiet">
-            Pi is set up on this computer. Rumi can share its sign-ins, so anything you connected in Pi works here too, and the other way round. Rumi never
-            changes your other Pi settings.
-          </p>
-          <div className="seg" role="radiogroup">
-            <button
-              role="radio"
-              aria-checked={st.mode === 'pi'}
-              className={st.mode === 'pi' ? 'on' : ''}
-              disabled={!!busy}
-              onClick={() => act('mode', () => api('/connections/mode', 'POST', {mode: 'pi'}))}
-            >
-              Share with Pi
-            </button>
-            <button
-              role="radio"
-              aria-checked={st.mode === 'rumi'}
-              className={st.mode === 'rumi' ? 'on' : ''}
-              disabled={!!busy}
-              onClick={() => act('mode', () => api('/connections/mode', 'POST', {mode: 'rumi'}))}
-            >
-              Keep Rumi's own
-            </button>
-          </div>
-        </section>
-      )}
-
       {!!st.connected.length && (
         <section className="cx-section">
           <h3>Connected</h3>
           <div className="cx-list">
             {st.connected.map(p => (
               <div key={p.id} className="cx-row">
-                <span className="dot finished" />
+                <span className={'dot ' + (p.note ? 'cancelled' : 'finished')} />
                 <b>{p.name}</b>
-                <span className="quiet">
-                  {p.models} model{p.models === 1 ? '' : 's'}
+                <span className="quiet" title={p.note || undefined}>
+                  {p.note ? 'subscription not usable here: add an API key' : `${p.models} model${p.models === 1 ? '' : 's'}`}
                 </span>
                 {p.stored && (
                   <button
@@ -188,23 +159,8 @@ export function Connect({firstRun, onClose, onError}: {firstRun: boolean; onClos
       )}
 
       <section className="cx-section">
-        <h3>Sign in with a subscription you have</h3>
-        <p className="quiet">A browser tab opens for you to sign in. Nothing is copied by hand.</p>
-        <div className="cx-grid">
-          {st.subscriptions.map(p => (
-            <button key={p.id} className={'cx-card' + (p.connected ? ' done' : '')} onClick={() => start(p.id, 'oauth')}>
-              <b>{p.oauth!.label}</b>
-              <small>
-                {p.oauth!.name}
-                {p.connected ? ' · connected' : ''}
-              </small>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="cx-section">
         <h3>Use an API key</h3>
+        <p className="quiet">Anthropic (Claude), OpenAI, OpenRouter, Google and more. You pay the provider for what you use; the key stays on this computer.</p>
         <div className="cx-key">
           <select aria-label="Provider" value={keyProvider?.id || ''} onChange={e => setKeyFor(e.target.value)}>
             {st.keys.map(p => (
@@ -218,6 +174,23 @@ export function Connect({firstRun, onClose, onError}: {firstRun: boolean; onClos
             Add key
           </button>
         </div>
+      </section>
+
+      <section className="cx-section">
+        <h3>Sign in with ChatGPT, Copilot and more</h3>
+        <p className="quiet">Use a subscription you already pay for. A browser tab opens for you to sign in; nothing is copied by hand.</p>
+        <div className="cx-grid">
+          {st.subscriptions.map(p => (
+            <button key={p.id} className={'cx-card' + (p.connected ? ' done' : '')} onClick={() => start(p.id, 'oauth')}>
+              <b>{p.oauth!.label}</b>
+              <small>
+                {p.oauth!.name}
+                {p.connected ? ' · connected' : ''}
+              </small>
+            </button>
+          ))}
+        </div>
+        <p className="quiet">Claude subscriptions only work in Anthropic's own apps. For Claude in Rumi, add an Anthropic API key above.</p>
       </section>
 
       <section className="cx-section">
@@ -251,6 +224,36 @@ export function Connect({firstRun, onClose, onError}: {firstRun: boolean; onClos
         <CustomServer onAdd={custom => act('local', () => api('/connections/local', 'POST', {custom}))} />
       </section>
 
+      {st.piInstalled && (
+        <section className="cx-section">
+          <h3>Your Pi sign-ins</h3>
+          <p className="quiet">
+            Pi is set up on this computer. Rumi can share its sign-ins, so what you connected in Pi works here too (except Claude subscriptions), and the other
+            way round. Rumi never changes your other Pi settings.
+          </p>
+          <div className="seg" role="radiogroup">
+            <button
+              role="radio"
+              aria-checked={st.mode === 'pi'}
+              className={st.mode === 'pi' ? 'on' : ''}
+              disabled={!!busy}
+              onClick={() => act('mode', () => api('/connections/mode', 'POST', {mode: 'pi'}))}
+            >
+              Share with Pi
+            </button>
+            <button
+              role="radio"
+              aria-checked={st.mode === 'rumi'}
+              className={st.mode === 'rumi' ? 'on' : ''}
+              disabled={!!busy}
+              onClick={() => act('mode', () => api('/connections/mode', 'POST', {mode: 'rumi'}))}
+            >
+              Keep Rumi's own
+            </button>
+          </div>
+        </section>
+      )}
+
       {firstRun && (
         <div className="cx-foot">
           <button className="primary" disabled={!st.ready} onClick={onClose}>
@@ -270,7 +273,7 @@ function Shell({firstRun, onClose, children}: {firstRun: boolean; onClose: () =>
           <div>
             {firstRun && <div className="brand">rumi</div>}
             <h2>{firstRun ? 'Connect a model' : 'Models'}</h2>
-            <p className="quiet">Rumi's workers run on an AI you already have: a subscription, an API key, or a model on this computer.</p>
+            <p className="quiet">Rumi's workers run on an AI you already have: an API key, a subscription, or a model on this computer.</p>
           </div>
           {!firstRun && (
             <button className="ghost close" onClick={onClose} aria-label="Close">

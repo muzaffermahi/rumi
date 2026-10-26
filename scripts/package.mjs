@@ -100,8 +100,8 @@ fs.writeFileSync(
   `Rumi — a quiet place to write, with agents working beside your words.
 
 1. ${open}
-2. Your browser opens Rumi. Connect a model: sign in with a subscription you have (ChatGPT, Claude, Grok, Copilot…),
-   paste an API key, or use LM Studio / Ollama on this computer.
+2. Your browser opens Rumi. Connect a model: paste an API key (Anthropic, OpenAI, OpenRouter…), sign in with ChatGPT or Copilot,
+   or use LM Studio / Ollama on this computer.
 3. Write. Select a passage and press Ctrl+Enter (Cmd+Enter on a Mac) to hand it to an agent.
 
 Rumi keeps your documents and settings in the .rumi folder in your home folder, so you can replace this folder with a

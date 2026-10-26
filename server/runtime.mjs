@@ -150,9 +150,17 @@ const describeModel = m => ({
   local: connections.local.some(l => l.id === m.provider),
   subscription: !!runtime?.isUsingSubscription?.(m.provider),
 });
+// Providers whose subscription sign-in may not be used by other apps. Anthropic's terms allow Claude Free, Pro and
+// Max credentials only in Claude Code and Claude.ai (https://code.claude.com/docs/en/legal-and-compliance), so Rumi
+// uses Claude only through an API key, even when a Claude subscription is signed in through shared Pi sign-ins.
+export const SUBSCRIPTION_NOT_ALLOWED = new Set(['anthropic']);
+export const blockedSubscription = provider => SUBSCRIPTION_NOT_ALLOWED.has(provider) && !!runtime?.isUsingSubscription?.(provider);
+export const SUBSCRIPTION_NOTE =
+  "Anthropic's terms allow Claude subscriptions only in Claude Code and Claude.ai, so Rumi can't use one. Add an Anthropic API key in Settings → Models to use Claude here.";
+
 export async function listModels() {
   try {
-    available = await runtime.getAvailable();
+    available = (await runtime.getAvailable()).filter(m => !blockedSubscription(m.provider));
   } catch (e) {
     console.error('Model listing failed:', e.message);
   }
@@ -169,6 +177,7 @@ export function resolveModel(ref) {
     id = ref.slice(i + 1),
     model = runtime.getModel(provider, id);
   if (!model) throw Error(`Model ${ref} is not known. Check Settings → Models.`);
+  if (blockedSubscription(provider)) throw Error(SUBSCRIPTION_NOTE);
   if (available.length && !available.some(m => m.provider === provider && m.id === id))
     throw Error(`Model ${ref} is not connected. Sign in to ${provider} in Settings → Models.`);
   return model;
