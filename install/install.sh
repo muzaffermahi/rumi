@@ -32,14 +32,14 @@ if [ -n "${RUMI_DOWNLOAD_BASE:-}" ]; then base="$RUMI_DOWNLOAD_BASE"; elif [ -n 
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
-say "Downloading $file…"
+say "Downloading ${file}..."
 curl -fsSL "$base/$file" -o "$tmp/$file" || fail "could not download $base/$file"
 curl -fsSL "$base/$file.sha256" -o "$tmp/$file.sha256" || fail "could not download the checksum"
 expected="$(cut -d' ' -f1 < "$tmp/$file.sha256")"
 if command -v sha256sum >/dev/null 2>&1; then actual="$(sha256sum "$tmp/$file" | cut -d' ' -f1)"; else actual="$(shasum -a 256 "$tmp/$file" | cut -d' ' -f1)"; fi
 [ "$expected" = "$actual" ] || fail "checksum mismatch for $file; the download may be damaged. Try again."
 
-say "Installing to $DIR…"
+say "Installing to ${DIR}..."
 mkdir -p "$tmp/out"
 if [ "$ext" = zip ]; then unzip -q "$tmp/$file" -d "$tmp/out"; else tar -xzf "$tmp/$file" -C "$tmp/out"; fi
 # Stop a running Rumi before replacing it; your documents and settings in ~/.rumi are kept.
