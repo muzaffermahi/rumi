@@ -14,7 +14,7 @@ and find the answer waiting beside the passage it belongs to.
 ![Local-first](https://img.shields.io/badge/local--first-no%20telemetry-555)
 ![Node 22.19+](https://img.shields.io/badge/node-22.19%2B-555)
 
-<img src="docs/suggestion.png" alt="A plan in Rumi with three delegated passages. Each one's status sits in the margin, and one answer is open beside its passage." width="900" />
+<img src="docs/demo.gif" alt="Selecting a passage and delegating it with Ctrl+Enter, delegating a research question, writing on while both work, then reading the answer in the margin and replacing the passage with a word diff" width="900" />
 
 </div>
 

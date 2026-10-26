@@ -126,7 +126,9 @@ export function startFakeModel(port = 0) {
       if (task.includes('[stall]') && body.messages.at(-1)?.role === 'user') {
         const timer = setTimeout(go, 60_000);
         req.on('close', () => clearTimeout(timer));
-      } else go();
+      } else if (process.env.FAKE_MODEL_DELAY)
+        setTimeout(go, Number(process.env.FAKE_MODEL_DELAY)); // for the demo recording
+      else go();
     });
   });
   return new Promise(resolve =>
