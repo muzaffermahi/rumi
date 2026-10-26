@@ -140,8 +140,14 @@ export async function mergeWorktree(folder, id, title) {
   await run(['add', '-A'], {cwd: dir});
   const dirty = (await run(['status', '--porcelain'], {cwd: dir})).trim();
   if (dirty) await run(['-c', 'user.name=Rumi', '-c', 'user.email=rumi@localhost', 'commit', '--quiet', '-m', `Rumi: ${title}`.slice(0, 200)], {cwd: dir});
+  // The merge commit is yours, so it uses your git identity; Rumi's stands in only when git has none set up.
+  const named = await run(['config', 'user.email'], {cwd: folder}).then(
+    v => !!v.trim(),
+    () => false,
+  );
+  const identity = named ? [] : ['-c', 'user.name=Rumi', '-c', 'user.email=rumi@localhost'];
   try {
-    await run(['merge', '--no-ff', '--no-edit', branchOf(id)], {cwd: folder});
+    await run([...identity, 'merge', '--no-ff', '--no-edit', branchOf(id)], {cwd: folder});
   } catch (e) {
     await run(['merge', '--abort'], {cwd: folder}).catch(() => {});
     throw Error(`Could not merge ${branchOf(id)}: ${e.message} The branch is kept; merge it yourself or discard it.`);

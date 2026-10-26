@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
         node: [22, 24]
     runs-on: ${{ matrix.os }}
     steps:
@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-latest, macos-15-intel]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -71,3 +71,14 @@ jobs:
       - name: Start the packaged Rumi with only its own Node, then stop it
         shell: bash
         run: node scripts/smoke-package.mjs
+      - name: Install with install.sh as a new user would, then start and stop Rumi
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          export HOME="$RUNNER_TEMP/home" SHELL=/bin/zsh RUMI_DATA="$RUNNER_TEMP/data" RUMI_PORT=4498 RUMI_NO_UPDATE_CHECK=1
+          mkdir -p "$HOME"
+          RUMI_DOWNLOAD_BASE="file://$PWD/release" sh install/install.sh
+          grep -F "$HOME/.local/bin" "$HOME/.zshrc"
+          "$HOME/.local/bin/rumi" --no-folder --no-open
+          "$HOME/.local/bin/rumi" status | grep "is running"
+          "$HOME/.local/bin/rumi" stop

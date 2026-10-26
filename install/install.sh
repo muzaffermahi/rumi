@@ -2,7 +2,8 @@
 # Installs Rumi on macOS or Linux: downloads the latest release (it carries its own Node), checks its checksum,
 # unpacks it to ~/.local/share/rumi-app and links the `rumi` command into ~/.local/bin.
 #   curl -fsSL https://github.com/muzaffermahi/rumi/releases/latest/download/install.sh | sh
-# Options (environment): RUMI_VERSION=0.5.0 to pin a version, RUMI_INSTALL_DIR and RUMI_BIN_DIR to change places.
+# Options (environment): RUMI_VERSION=0.5.0 to pin a version, RUMI_INSTALL_DIR and RUMI_BIN_DIR to change places,
+# RUMI_NO_MODIFY_PATH=1 to leave shell startup files alone.
 set -eu
 
 REPO="muzaffermahi/rumi"
@@ -25,7 +26,6 @@ case "$(uname -m)" in
   x86_64|amd64) arch=x64 ;;
   *) fail "unsupported processor $(uname -m)" ;;
 esac
-[ "$os" = linux ] && [ "$arch" = arm64 ] && fail "no Linux arm64 build yet. Install Node 22+ and run: npm install -g rumi-app"
 
 file="Rumi-$os-$arch.$ext"
 if [ -n "${RUMI_DOWNLOAD_BASE:-}" ]; then base="$RUMI_DOWNLOAD_BASE"; elif [ -n "${RUMI_VERSION:-}" ]; then base="https://github.com/$REPO/releases/download/v$RUMI_VERSION"; else base="https://github.com/$REPO/releases/latest/download"; fi
@@ -60,8 +60,27 @@ chmod +x "$BIN/rumi"
 say ""
 say "Rumi $("$BIN/rumi" --version) is installed."
 case ":$PATH:" in
-  *":$BIN:"*) say "Run: rumi" ;;
-  *) say "Add $BIN to your PATH (for example in ~/.zshrc or ~/.bashrc):"
-     say "  export PATH=\"$BIN:\$PATH\""
-     say "Then run: rumi" ;;
+  *":$BIN:"*) say "Run: rumi"; exit 0 ;;
 esac
+
+# $BIN is not on PATH (macOS never has ~/.local/bin there): add it to the shell's startup file, once.
+# RUMI_NO_MODIFY_PATH=1 leaves startup files alone.
+line="export PATH=\"$BIN:\$PATH\""
+case "$(basename "${SHELL:-sh}")" in
+  zsh) rc="${ZDOTDIR:-$HOME}/.zshrc" ;;
+  bash) if [ "$os" = mac ]; then rc="$HOME/.bash_profile"; else rc="$HOME/.bashrc"; fi ;;
+  fish) rc="${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/rumi.fish"; line="fish_add_path \"$BIN\"" ;;
+  *) rc="$HOME/.profile" ;;
+esac
+if [ -z "${RUMI_NO_MODIFY_PATH:-}" ]; then
+  if ! grep -qsF "$BIN" "$rc"; then
+    mkdir -p "$(dirname "$rc")"
+    printf '\n# Added by the Rumi installer\n%s\n' "$line" >> "$rc"
+  fi
+  say "Added $BIN to your PATH in $rc."
+  say "Open a new terminal and run: rumi"
+  say "Or start it right now with: $BIN/rumi"
+else
+  say "Add $BIN to your PATH, for example: $line"
+  say "Or start it with: $BIN/rumi"
+fi
