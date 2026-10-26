@@ -52,7 +52,7 @@ Working with AI today mostly means taking turns. You write a prompt, then you wa
 
 ## Install
 
-> The one-line installers and downloads arrive with the first release. Until then, install from source (below).
+Rumi comes with its own Node, so there's nothing else to install. It runs on macOS (Apple silicon and Intel), Linux (x64 and arm64) and Windows.
 
 **macOS and Linux**
 
@@ -65,6 +65,8 @@ curl -fsSL https://github.com/muzaffermahi/rumi/releases/latest/download/install
 ```powershell
 irm https://github.com/muzaffermahi/rumi/releases/latest/download/install.ps1 | iex
 ```
+
+**Or download it** from the [latest release](https://github.com/muzaffermahi/rumi/releases/latest), unzip it and open **Rumi** (`Rumi.command` on a Mac, `rumi.sh` on Linux, `Rumi.cmd` on Windows). Rumi isn't signed with an Apple certificate yet, so the first time a Mac will ask you to allow it in System Settings → Privacy & Security → Open Anyway. The one-line installer doesn't need this.
 
 **From source** (Node 22.19+)
 

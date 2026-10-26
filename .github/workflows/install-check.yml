@@ -1,0 +1,53 @@
+# After each release: runs the README's one-line installers against the published downloads on fresh machines,
+# then starts and stops Rumi, the way someone trying it for the first time would.
+name: Install check
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  unix:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v'))
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-15-intel, ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUMI_DATA: ${{ github.workspace }}/../rumi-data
+      RUMI_PORT: '4497'
+      RUMI_NO_UPDATE_CHECK: '1'
+    steps:
+      - name: curl | sh
+        shell: bash
+        run: |
+          export HOME="$RUNNER_TEMP/home" SHELL=/bin/zsh
+          mkdir -p "$HOME"
+          curl -fsSL https://github.com/muzaffermahi/rumi/releases/latest/download/install.sh | sh
+          "$HOME/.local/bin/rumi" --no-folder --no-open
+          "$HOME/.local/bin/rumi" status | grep "is running"
+          curl -fsS "http://127.0.0.1:$RUMI_PORT/api/health" | grep '"rumi":true'
+          "$HOME/.local/bin/rumi" stop
+
+  windows:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'v'))
+    runs-on: windows-latest
+    env:
+      RUMI_DATA: ${{ github.workspace }}\..\rumi-data
+      RUMI_PORT: '4497'
+      RUMI_NO_UPDATE_CHECK: '1'
+      RUMI_NO_SHORTCUT: '1'
+    steps:
+      - name: irm | iex
+        shell: powershell
+        run: |
+          irm https://github.com/muzaffermahi/rumi/releases/latest/download/install.ps1 | iex
+          $rumi = Join-Path $env:LOCALAPPDATA 'Programs\Rumi\bin\rumi.cmd'
+          & $rumi --no-folder --no-open
+          if (-not ((& $rumi status) -match 'is running')) { throw 'Rumi did not start.' }
+          if (-not (Invoke-RestMethod "http://127.0.0.1:$env:RUMI_PORT/api/health").rumi) { throw 'Health check failed.' }
+          & $rumi stop
