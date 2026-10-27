@@ -8,6 +8,23 @@ All notable changes to Rumi. From 0.5.0 on, this file is kept by release-please 
 
 - Two Build tasks in one git repository no longer queue or overwrite each other: the second works on its own copy of your files (uncommitted ones included), and **Apply to my folder** brings its changes in, uncommitted and revertable. Where you changed the same lines meanwhile, the overlap is marked in the file. Research, Write and Think tasks no longer wait for a busy project folder.
 
+## [0.6.0](https://github.com/muzaffermahi/rumi/compare/rumi-app-v0.5.0...rumi-app-v0.6.0) (2026-10-27)
+
+
+### Features
+
+* build Rumi with Rumi (npm run try, npm run adopt, AGENTS.md) ([03a6ad7](https://github.com/muzaffermahi/rumi/commit/03a6ad78ecd165aab9ce9882367e4cf6e247f237))
+* **build:** a second Build task works on its own copy instead of overwriting ([a2aed32](https://github.com/muzaffermahi/rumi/commit/a2aed32be37872f940ebe3a176682ffaedc08487))
+* **models:** lead with API keys, ChatGPT/Copilot and local models ([e82801e](https://github.com/muzaffermahi/rumi/commit/e82801e339880aed5c02742c5953f708492e1d14))
+* neutral colours with a Mevlana green accent, and a README built on the idea ([39b4482](https://github.com/muzaffermahi/rumi/commit/39b4482d8a2e27b72ee86fb5f2150689a0925fb8))
+* Rumi 0.5, from prototype to an installable open-source tool ([c56a5b5](https://github.com/muzaffermahi/rumi/commit/c56a5b5642d4a0a7a0ef734cd286082423d4fd28))
+
+
+### Bug Fixes
+
+* a smooth first install on macOS and Linux ([94dbcfe](https://github.com/muzaffermahi/rumi/commit/94dbcfef30910b565721917375edda73b97a775b))
+* **install:** plain ASCII in install.sh, so macOS sh reads $file correctly ([f748747](https://github.com/muzaffermahi/rumi/commit/f7487475ede2fcf5daf16699b344f4e8c3a31787))
+
 ## 0.5.0 (2026-10-26)
 
 The release that turns Rumi from a prototype into a tool you can install, trust and extend.
