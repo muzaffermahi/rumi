@@ -12,6 +12,7 @@ type Result = {
   cut?: boolean;
   reverted?: {at: string} | null;
   branch?: string;
+  copy?: boolean;
   dir?: string;
 };
 
@@ -64,7 +65,7 @@ export function Changes({task}: {task: Task}) {
         <span className="grow">
           {r.files.length ? `${r.files.length} file${r.files.length === 1 ? '' : 's'} changed` : 'No files changed'}
           {r.stat && <span className="quiet"> · {r.stat.replace(/^\s*\d+ files? changed,?\s*/, '')}</span>}
-          {r.mode === 'worktree' && <span className="quiet"> · on branch {r.branch}</span>}
+          {r.mode === 'worktree' && <span className="quiet"> · {r.copy ? 'on its own copy of your folder' : `on branch ${r.branch}`}</span>}
         </span>
         {r.mode === 'checkpoint' && !r.reverted && !!r.files.length && (
           <button
@@ -85,13 +86,20 @@ export function Changes({task}: {task: Task}) {
         )}
         {r.mode === 'worktree' && (
           <>
-            <button className="primary" disabled={!!busy || !r.files.length} onClick={() => act('merge', 'merge', 'Merged into your branch.')}>
-              {busy === 'merge' ? 'Merging…' : 'Merge into my branch'}
+            <button
+              className="primary"
+              disabled={!!busy || !r.files.length}
+              onClick={() => act('merge', 'merge', r.copy ? 'Its changes are in your folder now.' : 'Merged into your branch.')}
+            >
+              {busy === 'merge' ? (r.copy ? 'Applying…' : 'Merging…') : r.copy ? 'Apply to my folder' : 'Merge into my branch'}
             </button>
             <button
               className="danger-btn"
               disabled={!!busy}
-              onClick={() => confirm('Discard this task’s branch and worktree? Its changes are lost.') && act('discard', 'discard', 'Discarded.')}
+              onClick={() =>
+                confirm(r.copy ? 'Discard this task’s copy? Its changes are lost.' : 'Discard this task’s branch and worktree? Its changes are lost.') &&
+                act('discard', 'discard', 'Discarded.')
+              }
             >
               Discard
             </button>
@@ -99,6 +107,12 @@ export function Changes({task}: {task: Task}) {
         )}
       </div>
       {r.reverted && <p className="quiet">Reverted {new Date(r.reverted.at).toLocaleString()}. Below is what the task had changed.</p>}
+      {r.mode === 'worktree' && r.copy && (
+        <p className="quiet">
+          Another Build task was working in your folder, so this one worked on a copy. Applying puts its changes in your folder, uncommitted, and you can revert
+          them afterwards.
+        </p>
+      )}
       {r.mode === 'worktree' && r.dir && (
         <p className="quiet">
           Working copy: <code>{r.dir}</code>

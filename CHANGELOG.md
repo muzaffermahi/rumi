@@ -2,6 +2,12 @@
 
 All notable changes to Rumi. From 0.5.0 on, this file is kept by release-please from conventional commit messages.
 
+## Unreleased
+
+### Build tasks
+
+- Two Build tasks in one git repository no longer queue or overwrite each other: the second works on its own copy of your files (uncommitted ones included), and **Apply to my folder** brings its changes in, uncommitted and revertable. Where you changed the same lines meanwhile, the overlap is marked in the file. Research, Write and Think tasks no longer wait for a busy project folder.
+
 ## 0.5.0 (2026-10-26)
 
 The release that turns Rumi from a prototype into a tool you can install, trust and extend.

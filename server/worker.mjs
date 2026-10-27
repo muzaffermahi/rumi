@@ -6,10 +6,10 @@ import path from 'node:path';
 import {makeSession, resolveModel} from './runtime.mjs';
 import {kindOf} from '../pi/kinds.mjs';
 import {config, effective} from './config.mjs';
-import {checkpoint, createWorktree} from './git.mjs';
+import {canBranch, checkpoint, createWorktree, createWorktreeFromFiles} from './git.mjs';
 import {DOCUMENT_FILE} from './context.mjs';
 import {newActivity, track} from './activity.mjs';
-import {nextToStart} from './queue.mjs';
+import {folderTaken, nextToStart} from './queue.mjs';
 import {wsOfTask, allTasks, outDir, contextOf} from './workspaces.mjs';
 import {touch, flush} from './live.mjs';
 
@@ -189,7 +189,8 @@ async function open(t, ctl) {
   return session;
 }
 
-// Build tasks: their own worktree when that is on, otherwise a checkpoint of the project before the run.
+// Build tasks: their own worktree when that is on, or when another Build task is already working in the folder;
+// otherwise a checkpoint of the project before the run.
 async function prepareBuild(t) {
   const ws = wsOfTask.get(t.id);
   if (!t.projectDir || !kindOf(t.kind, ws.folder).needsFolder) return;
@@ -197,6 +198,21 @@ async function prepareBuild(t) {
   if (opts.worktrees && !t.worktree && !t.started) {
     t.worktree = await createWorktree(t.projectDir, t.id);
     t.notice = {message: `Working on its own branch in ${t.worktree}`, at: Date.now()};
+  } else if (!t.worktree && !config.sameFolder && folderTaken(t, allTasks(), holdsFolder)) {
+    try {
+      const {dir, base} = await createWorktreeFromFiles(t.projectDir, t.id);
+      t.worktree = dir;
+      t.worktreeBase = base;
+      t.notice = {
+        message: 'Another Build task is working in this folder, so this one works on its own copy. You apply its changes when it is done.',
+        at: Date.now(),
+      };
+    } catch (e) {
+      // No copy possible after all: wait for the folder like before.
+      t.noWorktree = true;
+      t.warnings = [...(t.warnings || []), `Could not make a separate copy: ${e.message}`];
+      throw Object.assign(Error('wait'), {requeue: true});
+    }
   }
   if (!t.worktree && opts.checkpoints) {
     const before = await checkpoint(t.projectDir, `Before: ${t.title}`).catch(e => {
@@ -258,7 +274,8 @@ async function run(t) {
     await finishBuild(t).catch(() => {});
     if (t.status === 'running') settle(t, s, ctl);
   } catch (e) {
-    if (t.status !== 'cancelled') {
+    if (e.requeue) t.status = 'queued';
+    else if (t.status !== 'cancelled') {
       t.status = 'failed';
       t.error = e.message;
     }
@@ -312,11 +329,17 @@ export function listFiles(t) {
   }
 }
 
+// Only Build tasks change the project folder; the others write in their own task folder.
+const isBuild = t => !!t.projectDir && !!wsOfTask.get(t.id) && !!kindOf(t.kind, wsOfTask.get(t.id).folder).needsFolder;
+const holdsFolder = t => isBuild(t) && !t.worktree;
+// A Build task that has not run yet can start on its own worktree while another holds the folder.
+const canSeparate = t => isBuild(t) && !t.started && !t.worktree && !t.noWorktree && canBranch(t.projectDir);
+
 export function pump() {
   for (const t of nextToStart(
     allTasks().filter(t => !t.archived),
     config.maxWorkers,
-    {sameFolder: !!config.sameFolder},
+    {sameFolder: !!config.sameFolder, holdsFolder, canSeparate},
   ))
     void run(t);
 }

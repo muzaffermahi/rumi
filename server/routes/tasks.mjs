@@ -21,7 +21,7 @@ import {legacyConversation, readSessionEntries, toConversation} from '../convers
 import {contextOf, docMeta, docOf, findTask, outDir, readmeOf, saveContext, saveState, state, wsOfTask} from '../workspaces.mjs';
 import {flush, summary, touch, broadcast} from '../live.mjs';
 import {answerDialog, deliver, listFiles, pump, restartStep, resume, sessionOf, stop} from '../worker.mjs';
-import {changes, discardWorktree, mergeWorktree, restoreCheckpoint, worktreeChanges} from '../git.mjs';
+import {applyWorktree, changes, checkpoint, discardWorktree, mergeWorktree, restoreCheckpoint, worktreeChanges} from '../git.mjs';
 import {dataDir} from '../paths.mjs';
 import {fail, handle, taskParam, wsParam} from './common.mjs';
 
@@ -302,7 +302,7 @@ router.get(
   handle(async (q, r) => {
     const t = taskParam(q, r);
     if (!t) return;
-    if (t.worktree) return r.json({mode: 'worktree', ...(await worktreeChanges(t.projectDir, t.id))});
+    if (t.worktree) return r.json({mode: 'worktree', copy: !!t.worktreeBase, ...(await worktreeChanges(t.projectDir, t.id, t.worktreeBase))});
     const first = t.checkpoints?.[0],
       last = t.checkpoints?.at(-1);
     if (!first) return r.json({mode: 'none', files: []});
@@ -348,12 +348,28 @@ router.post(
     if (!t) return;
     if (!t.worktree) return r.status(400).json({error: 'This task has no worktree.'});
     if (t.status === 'running') return r.status(409).json({error: 'Stop the task before merging.'});
-    await mergeWorktree(t.projectDir, t.id, t.title);
+    let overlap = null;
+    if (t.worktreeBase) {
+      // A copy of your files: its changes go into your folder uncommitted, checkpointed so they can be reverted.
+      const before = await checkpoint(t.projectDir, `Before applying: ${t.title}`).catch(() => null);
+      await applyWorktree(t.projectDir, t.id, t.worktreeBase).catch(e => {
+        if (!e.applied) throw e;
+        overlap = e.message;
+      });
+      const after = before && (await checkpoint(t.projectDir, `Applied: ${t.title}`).catch(() => null));
+      if (before && after) t.checkpoints = [{before, after, at: new Date().toISOString()}];
+      t.notice = {message: overlap || 'Its changes are in your folder now.', at: Date.now()};
+    } else {
+      await mergeWorktree(t.projectDir, t.id, t.title);
+      t.notice = {message: 'Merged into your branch.', at: Date.now()};
+    }
     t.merged = new Date().toISOString();
     t.worktree = null;
-    t.notice = {message: 'Merged into your branch.', at: Date.now()};
+    t.worktreeBase = null;
     touch(t);
     flush(t);
+    // Applied with overlaps: answered as a conflict, so the message is shown; the task is updated either way.
+    if (overlap) return r.status(409).json({error: overlap});
     r.json(summary(t));
   }),
 );
@@ -366,6 +382,7 @@ router.post(
     if (t.status === 'running') await stop(t);
     await discardWorktree(t.projectDir, t.id);
     t.worktree = null;
+    t.worktreeBase = null;
     t.notice = {message: 'Its branch and worktree were discarded.', at: Date.now()};
     touch(t);
     flush(t);

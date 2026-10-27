@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {nextToStart, throttle} from '../server/queue.mjs';
+import {folderTaken, nextToStart, throttle} from '../server/queue.mjs';
 
 const t = (id, status, extra = {}) => ({id, status, created: `2026-10-24T10:00:0${id}Z`, ...extra});
 
@@ -69,4 +69,25 @@ test('throttle batches many calls into few', async () => {
   f();
   f.flush();
   assert.equal(calls, 2);
+});
+
+test('only tasks that change the folder wait for it; one that can work on a copy starts', () => {
+  const build = t => t.kind === 'build';
+  const tasks = [
+    t(1, 'running', {projectDir: 'C:/a', kind: 'build'}),
+    t(2, 'queued', {projectDir: 'C:/a', kind: 'research'}),
+    t(3, 'queued', {projectDir: 'C:/a', kind: 'build'}),
+  ];
+  assert.deepEqual(
+    nextToStart(tasks, 3, {holdsFolder: build}).map(x => x.id),
+    [2],
+    'Research runs beside a Build task; a second Build task waits',
+  );
+  assert.deepEqual(
+    nextToStart(tasks, 3, {holdsFolder: build, canSeparate: build}).map(x => x.id),
+    [2, 3],
+    'unless it can work on its own copy',
+  );
+  assert.ok(folderTaken(tasks[2], tasks, build));
+  assert.ok(!folderTaken(tasks[0], tasks, build), 'the holder itself is not kept out');
 });

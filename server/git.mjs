@@ -3,9 +3,12 @@
 // <project>/.rumi/checkpoints.git, whose work tree is the project. It works in any folder, respects the project's
 // .gitignore, and never touches your own repository, branch, index or stash. A task's changes are the difference
 // between its first and last snapshot, and reverting restores the first one (after snapshotting what was there).
-// Worktrees (optional, git repositories only): a Build task works in <project>/.rumi/worktrees/<id> on its own
-// branch, and you merge or discard it when it is done.
-import {execFile} from 'node:child_process';
+// Worktrees (git repositories only): a Build task works in <project>/.rumi/worktrees/<id> on its own branch.
+// With the worktrees setting on, every Build task gets one, branched from your last commit, and you merge or discard
+// it when it is done. Otherwise one is made only when a second Build task starts while another is working in the
+// folder: it starts from your files as they are, uncommitted changes included, and its changes are applied to your
+// folder when you take them, as if it had worked there.
+import {execFile, execFileSync, spawnSync} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -113,11 +116,49 @@ export async function createWorktree(folder, id) {
   return dir;
 }
 
+// Whether a folder can give a task its own worktree: a git repository with at least one commit. Asked by the queue
+// on every pass, so the answer is kept for a few seconds.
+const branchable = new Map();
+export function canBranch(folder) {
+  const hit = branchable.get(folder);
+  if (hit && Date.now() - hit.at < 10_000) return hit.ok;
+  let ok = false;
+  if (gitVersion !== null && isRepo(folder))
+    try {
+      execFileSync('git', ['rev-parse', '--verify', '--quiet', 'HEAD'], {cwd: folder, stdio: 'ignore', windowsHide: true});
+      ok = true;
+    } catch {}
+  branchable.set(folder, {ok, at: Date.now()});
+  return ok;
+}
+
+// A worktree that starts from the folder as it is now: your uncommitted and untracked files (minus ignored ones)
+// are snapshotted into a commit on top of HEAD, using a separate index so yours is untouched. Returns the worktree
+// and that commit, its base.
+export async function createWorktreeFromFiles(folder, id) {
+  if (!canBranch(folder)) throw Error('This folder is not a git repository with commits.');
+  const dir = worktreeDir(folder, id);
+  fs.mkdirSync(path.dirname(dir), {recursive: true});
+  const env = {GIT_INDEX_FILE: path.join(folder, '.rumi', `index-${id.slice(0, 8)}`)};
+  try {
+    await run(['read-tree', 'HEAD'], {cwd: folder, env});
+    await run(['add', '-A'], {cwd: folder, env});
+    const tree = (await run(['write-tree'], {cwd: folder, env})).trim();
+    const base = (
+      await run(['-c', 'user.name=Rumi', '-c', 'user.email=rumi@localhost', 'commit-tree', tree, '-p', 'HEAD', '-m', 'Rumi: your files'], {cwd: folder})
+    ).trim();
+    await run(['worktree', 'add', '-b', branchOf(id), dir, base], {cwd: folder});
+    return {dir, base};
+  } finally {
+    fs.rmSync(env.GIT_INDEX_FILE, {force: true});
+  }
+}
+
 // The worktree's changes against the commit it started from, including files not yet committed.
-export async function worktreeChanges(folder, id) {
+export async function worktreeChanges(folder, id, from) {
   const dir = worktreeDir(folder, id);
   await run(['add', '-A'], {cwd: dir});
-  const base = (await run(['merge-base', 'HEAD', branchOf(id)], {cwd: folder}).catch(() => 'HEAD')).trim() || 'HEAD';
+  const base = from || (await run(['merge-base', 'HEAD', branchOf(id)], {cwd: folder}).catch(() => 'HEAD')).trim() || 'HEAD';
   const names = await run(['diff', '--cached', '--name-status', '--no-renames', base], {cwd: dir});
   const files = names
     .trim()
@@ -151,6 +192,78 @@ export async function mergeWorktree(folder, id, title) {
   } catch (e) {
     await run(['merge', '--abort'], {cwd: folder}).catch(() => {});
     throw Error(`Could not merge ${branchOf(id)}: ${e.message} The branch is kept; merge it yourself or discard it.`);
+  }
+  await discardWorktree(folder, id, {keepBranch: false});
+}
+
+// For a worktree made from your files: applies its changes since `base` to your folder, uncommitted, as if the task
+// had worked there. Your index is never touched. A file you did not change meanwhile simply takes the task's version;
+// one you did is merged line by line (git merge-file), and where you both changed the same lines the conflict is
+// marked in the file. Then the copy is removed, unless something conflicted: its branch is kept to compare with.
+export async function applyWorktree(folder, id, base) {
+  const dir = worktreeDir(folder, id);
+  await run(['add', '-A'], {cwd: dir});
+  const dirty = (await run(['status', '--porcelain'], {cwd: dir})).trim();
+  if (dirty) await run(['-c', 'user.name=Rumi', '-c', 'user.email=rumi@localhost', 'commit', '--quiet', '-m', 'Rumi: the task’s changes'], {cwd: dir});
+  const blob = (rev, p) => {
+    try {
+      return execFileSync('git', ['show', `${rev}:${p}`], {cwd: folder, maxBuffer: 256 * 1024 * 1024, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore']});
+    } catch {
+      return null; // not in that version
+    }
+  };
+  const names = (await run(['diff', '--name-only', '--no-renames', '-z', base, branchOf(id)], {cwd: folder})).split('\0').filter(Boolean);
+  const conflicts = [];
+  const tmp = fs.mkdtempSync(path.join(folder, '.rumi', 'apply-'));
+  try {
+    for (const p of names) {
+      const file = path.join(folder, p);
+      const before = blob(base, p);
+      const theirs = blob(branchOf(id), p);
+      const ours = fs.existsSync(file) ? fs.readFileSync(file) : null;
+      // Git may have checked your file out with Windows line endings; compare and merge in the stored form.
+      const crlf = ours && !ours.includes(0) && ours.includes('\r\n') && !before?.includes('\r\n');
+      const norm = b => (b && crlf ? Buffer.from(b.toString('utf8').replace(/\r\n/g, '\n')) : b);
+      const out = b => (crlf && !b.includes(0) ? Buffer.from(b.toString('utf8').replace(/\r?\n/g, '\r\n')) : b);
+      const mine = norm(ours);
+      if (mine === null ? before === null : before && mine.equals(before)) {
+        // You left this file alone: it becomes the task's version (or goes, if the task deleted it).
+        if (theirs) {
+          fs.mkdirSync(path.dirname(file), {recursive: true});
+          fs.writeFileSync(file, out(theirs));
+        } else fs.rmSync(file, {force: true});
+        continue;
+      }
+      if (theirs && mine && theirs.equals(mine)) continue; // you made the same change
+      if (!theirs || !mine || theirs.includes(0) || mine.includes(0)) {
+        conflicts.push(p); // a deletion against an edit, or a binary file: yours stays
+        continue;
+      }
+      const write = (n, b) => (fs.writeFileSync(path.join(tmp, n), b || ''), path.join(tmp, n));
+      const r = spawnSync(
+        'git',
+        ['merge-file', '-p', '-L', 'yours', '-L', 'before', '-L', 'the task', write('ours', mine), write('base', before), write('theirs', theirs)],
+        {cwd: folder, maxBuffer: 256 * 1024 * 1024, windowsHide: true},
+      );
+      if (r.status < 0 || r.error || !r.stdout) {
+        conflicts.push(p);
+        continue;
+      }
+      fs.writeFileSync(file, out(r.stdout));
+      if (r.status > 0) conflicts.push(p);
+    }
+  } finally {
+    fs.rmSync(tmp, {recursive: true, force: true});
+  }
+  if (conflicts.length) {
+    // Applied as far as it goes: the copy is removed (so it is not applied twice) and the branch kept to compare.
+    await discardWorktree(folder, id, {keepBranch: true});
+    throw Object.assign(
+      Error(
+        `Its changes overlap with changes made in your folder since it started, in ${conflicts.join(', ')}. The rest is applied, and the overlaps are marked in the files (or yours kept, for binary and deleted files). Its branch ${branchOf(id)} is kept so you can compare.`,
+      ),
+      {applied: true},
+    );
   }
   await discardWorktree(folder, id, {keepBranch: false});
 }

@@ -13,7 +13,7 @@ import {presetsFor} from '../server/presets.mjs';
 import {exportDocument, importDocument, toMarkdown} from '../server/documents.mjs';
 import {newer} from '../server/update.mjs';
 import {diffWords, similarity} from '../web/diff.ts';
-import {createWorktree, mergeWorktree, worktreeChanges, discardWorktree} from '../server/git.mjs';
+import {applyWorktree, createWorktree, createWorktreeFromFiles, mergeWorktree, worktreeChanges, discardWorktree} from '../server/git.mjs';
 import {enginesFor} from '../server/search.mjs';
 
 test('settings are checked against their description', () => {
@@ -143,5 +143,26 @@ test('a Build task worktree lives on its own branch and merges into yours', asyn
   await createWorktree(repo, 'ffffffff-1');
   await discardWorktree(repo, 'ffffffff-1');
   assert.ok(!git('branch', '--list', 'rumi/ffffffff').length);
+  fs.rmSync(repo, {recursive: true, force: true, maxRetries: 5});
+});
+
+test('a copy that overlaps your later edits is applied with the conflicts marked, and its branch kept', async () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'rumi-copy-'));
+  const git = (...a) => execFileSync('git', a, {cwd: repo, stdio: 'pipe'}).toString().trim();
+  git('init', '-q', '-b', 'main');
+  git('config', 'core.autocrlf', 'false');
+  fs.writeFileSync(path.join(repo, 'plan.txt'), 'one\ntwo\nthree\n');
+  fs.mkdirSync(path.join(repo, '.rumi'));
+  fs.writeFileSync(path.join(repo, '.rumi', '.gitignore'), '*\n');
+  git('add', '-A');
+  git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init');
+  const id = 'c0ffee00-0000';
+  const {dir, base} = await createWorktreeFromFiles(repo, id);
+  fs.writeFileSync(path.join(dir, 'plan.txt'), 'one\nTWO from the task\nthree\n');
+  fs.writeFileSync(path.join(repo, 'plan.txt'), 'one\ntwo from you\nthree\n');
+  await assert.rejects(applyWorktree(repo, id, base), /overlap with changes made in your folder since it started, in plan.txt/);
+  assert.match(fs.readFileSync(path.join(repo, 'plan.txt'), 'utf8'), /<<<<<<<[\s\S]*two from you[\s\S]*TWO from the task/);
+  assert.ok(git('branch', '--list', 'rumi/c0ffee00').length, 'the branch is kept');
+  await discardWorktree(repo, id);
   fs.rmSync(repo, {recursive: true, force: true, maxRetries: 5});
 });

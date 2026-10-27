@@ -90,7 +90,7 @@ If you use [Pi](https://pi.dev), Rumi can share its sign-ins.
 | **Writing** | Many documents per workspace, tables, checklists, highlighted code, images, outline, focus mode, a slash menu, Markdown import and export, version history |
 | **Delegating** | Research (searches the web with no API key and cites sources), Write, Think, Build, saved instructions, any connected model per task |
 | **Reviewing** | Answers beside their passage: insert, replace with a word diff, take a part, or dismiss; run a task again on another model and compare |
-| **Build tasks** | In a project folder: edit files and run commands, checkpointed so you can review the diff and revert in one click, or run on their own git branch |
+| **Build tasks** | In a project folder: edit files and run commands, checkpointed so you can review the diff and revert in one click. Two at once in a git repository never overwrite each other: the second works on its own copy and you apply its changes when it's done |
 | **Staying in control** | Commands after a web read wait for your approval; workers can't reach your computer or local network; non-Build tasks can't change your project |
 | **Extending** | Your own task kinds and saved instructions as Markdown files, Pi packages and MCP servers per workspace, Brave, Tavily or SearXNG search |
 | **Getting around** | Command palette, keyboard shortcuts, light and dark themes, `rumi` in a terminal, `rumi delegate` from scripts |

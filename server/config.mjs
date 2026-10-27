@@ -14,7 +14,7 @@ const oneOf = (values, description, dflt) => ({type: 'string', enum: values, des
 export const FIELDS = {
   defaultModel: str('Model for new tasks, as provider/model (for example anthropic/claude-sonnet-4-5).'),
   maxWorkers: {type: 'integer', minimum: 1, maximum: 5, description: 'How many tasks run at once.', default: Number(process.env.RUMI_MAX_WORKERS) || 2},
-  sameFolder: bool('Let two tasks work in the same project folder at the same time.', false),
+  sameFolder: bool('Let two Build tasks change the same project folder at the same time, without giving the second its own copy.', false),
   reasoning: oneOf(['auto', 'off'], 'auto: more thinking for Think tasks, less for Write. off: faster, for small local models.', 'auto'),
   userSkills: bool('Also offer your personal skills in ~/.agents/skills to workers.', false),
   theme: oneOf(['system', 'light', 'dark'], 'Colour theme.', 'system'),

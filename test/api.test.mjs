@@ -2,6 +2,7 @@
 // asking the user, and what a Build task changed (checkpoints and revert).
 import test, {after, before} from 'node:test';
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -168,6 +169,36 @@ test('a Build task in a project is checkpointed, its changes listed, and reverte
   try {
     fs.rmSync(project, {recursive: true, force: true, maxRetries: 5});
   } catch {} // Windows keeps the workspace database open until the server stops
+});
+
+test('a second Build task in a busy repository works on its own copy, then applies to your folder', async () => {
+  const project = fs.mkdtempSync(path.join(os.tmpdir(), 'rumi-busy-'));
+  const git = (...a) => execFileSync('git', a, {cwd: project, stdio: 'pipe'}).toString();
+  git('init', '-q', '-b', 'main');
+  fs.writeFileSync(path.join(project, 'README.md'), '# Demo\n');
+  git('add', '-A');
+  git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init');
+  fs.writeFileSync(path.join(project, 'notes.txt'), 'not committed yet\n');
+  const {body: opened} = await rumi.api('/workspaces/open', {method: 'POST', body: {path: project}});
+  const wid = opened.workspace.id;
+  const {body: first} = await rumi.api(`/w/${wid}/tasks`, {method: 'POST', body: {instruction: 'Slow change [stall]', kind: 'build'}});
+  await rumi.until(first.id, t => t.status === 'running');
+  const {body: second} = await rumi.api(`/w/${wid}/tasks`, {method: 'POST', body: {instruction: 'Add a greeting file [build]', kind: 'build'}});
+  const done = await rumi.until(second.id);
+  assert.equal(done.status, 'finished', rumi.log().slice(-2000));
+  assert.ok(!fs.existsSync(path.join(project, 'hello.txt')), 'it did not write in your folder while the other task works there');
+  const changes = (await rumi.api(`/tasks/${second.id}/changes`)).body;
+  assert.equal(changes.copy, true);
+  assert.deepEqual(changes.files, [{status: 'added', path: 'hello.txt'}], 'your uncommitted files are its starting point, not its changes');
+  const applied = await rumi.api(`/tasks/${second.id}/merge`, {method: 'POST'});
+  assert.equal(applied.status, 200, JSON.stringify(applied.body));
+  // Git may convert line endings, depending on your settings.
+  const read = f => fs.readFileSync(path.join(project, f), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(read('hello.txt'), 'hello from the fake model\n');
+  assert.equal(read('notes.txt'), 'not committed yet\n');
+  assert.equal(git('log', '--oneline').trim().split('\n').length, 1, 'nothing was committed to your branch');
+  assert.ok(!git('branch', '--list', 'rumi/*').trim(), 'its branch is gone');
+  await rumi.api(`/tasks/${first.id}/stop`, {method: 'POST'});
 });
 
 test('Build tasks need a project folder', async () => {
