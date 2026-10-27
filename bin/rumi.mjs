@@ -159,8 +159,10 @@ async function ensureServer() {
   });
   child.unref();
   process.stdout.write('Starting Rumi');
-  for (let i = 0; i < 80; i++) {
+  // Usually a second or two. The first start after installing can take much longer while antivirus checks the new files.
+  for (let i = 0; i < 225; i++) {
     await sleep(400);
+    if (i === 25) process.stdout.write(' (the first start after installing can take a minute)');
     if (i % 3 === 2) process.stdout.write('.');
     const s = serverInfo();
     if (s && s.started !== before && s.pid === child.pid && (await health(s.port))) {

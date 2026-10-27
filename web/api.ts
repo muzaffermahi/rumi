@@ -134,6 +134,7 @@ export type Snapshot = {
   running: number;
   ready: boolean;
   version: string;
+  build: string;
   onboarded: boolean;
   update: Update | null;
   kinds: Kinds;

@@ -25,6 +25,18 @@ npm run dev:web      # terminal 2, then open http://localhost:5173
 
 The dev interface forwards `/api` to the server with your access token.
 
+### Building Rumi with Rumi
+
+Use an installed Rumi (`~/.rumi` data) to work on this checkout, so a task that builds or tests Rumi never touches the Rumi you're using. Build tasks read [AGENTS.md](AGENTS.md). When a change is ready:
+
+```bash
+npm run try              # this checkout on port 4400, beside your Rumi, with test data in .rumi-try/
+npm run adopt            # your Rumi becomes this checkout; open pages offer to reload
+npm run adopt -- --undo  # back to the version before
+```
+
+The first `npm run adopt` with no installed Rumi installs one from the checkout.
+
 ## Checks
 
 ```bash

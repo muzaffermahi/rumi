@@ -15,6 +15,7 @@ type Props = {
   onError: (e: unknown) => void;
   fresh: string;
   update: Update | null;
+  updated?: boolean;
   workspace: Workspace | null;
   workspaces: Workspace[];
   onSwitch: (id: string) => void;
@@ -187,7 +188,12 @@ export function Sidebar(p: Props) {
           </div>
         </div>
       </div>
-      {!collapsed && p.update && (
+      {p.updated && (
+        <button className="update-pill" onClick={() => location.reload()} title="Rumi was updated. Reload this page to use the new version.">
+          {collapsed ? 'Reload' : 'Rumi was updated · Reload'}
+        </button>
+      )}
+      {!collapsed && !p.updated && p.update && (
         <button className="update-pill" onClick={() => p.onSettings('about')}>
           Rumi {p.update.latest} is available
         </button>

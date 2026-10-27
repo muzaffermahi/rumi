@@ -41,6 +41,8 @@
     "dev:web": "vite",
     "build": "vite build",
     "start": "node bin/rumi.mjs",
+    "try": "node scripts/try.mjs",
+    "adopt": "node scripts/adopt.mjs",
     "test": "node --disable-warning=ExperimentalWarning --test test/*.test.mjs",
     "test:web": "vitest run",
     "test:e2e": "playwright test",

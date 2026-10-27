@@ -11,3 +11,4 @@ playwright-report/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 *.tsbuildinfo
+.rumi-try/

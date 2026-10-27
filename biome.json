@@ -10,6 +10,7 @@
       "**",
       "!**/dist",
       "!**/release",
+      "!**/.rumi-try",
       "!**/node_modules",
       "!data",
       "!docs/.vitepress/cache",

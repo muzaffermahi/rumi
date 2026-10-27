@@ -1,6 +1,9 @@
 // The server itself: health, live updates, shutdown, About (version, checks, log) and the update check.
+import {createHash} from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import express from 'express';
-import {version} from '../paths.mjs';
+import {appDir, version} from '../paths.mjs';
 import {config} from '../config.mjs';
 import * as host from '../runtime.mjs';
 import {kindsFor} from '../../pi/kinds.mjs';
@@ -15,6 +18,16 @@ import {handle, ready} from './common.mjs';
 
 const router = express.Router();
 
+// Which build of the interface this server serves. An open page compares it after reconnecting, so a Rumi updated
+// underneath it (a release, or `npm run adopt`) offers a reload.
+let build = '';
+try {
+  build = createHash('sha1')
+    .update(fs.readFileSync(path.join(appDir, 'dist', 'index.html')))
+    .digest('hex')
+    .slice(0, 12);
+} catch {}
+
 // What every page needs besides its tasks: whether a model is ready, this workspace's kinds and saved instructions,
 // the version and whether a newer one is out.
 addToSnapshot(ws => {
@@ -22,6 +35,7 @@ addToSnapshot(ws => {
   return {
     ready: ready(),
     version,
+    build,
     onboarded: !!state.onboarded,
     update: state.update?.available ? state.update : null,
     kinds: Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, {label: v.label, hint: v.hint, needsFolder: v.needsFolder, source: v.source}])),

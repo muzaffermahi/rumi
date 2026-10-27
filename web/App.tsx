@@ -38,6 +38,9 @@ export function App() {
   const [locked, setLocked] = useState(false);
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [connected, setConnected] = useState(true);
+  // The interface build this page loaded with; a different one after a reconnect means Rumi was updated.
+  const loadedBuild = useRef<string | null>(null);
+  const [updated, setUpdated] = useState(false);
   const [models, setModels] = useState<Model[]>([]);
   const [wid, setWid] = useState(stored('rumi.workspace') || 'global');
   const [docId, setDocId] = useState('');
@@ -73,6 +76,8 @@ export function App() {
       if (s.workspace.id !== wid) return setWid(s.workspace.id); // that workspace is gone; the server fell back
       setSnap(s);
       setConnected(true);
+      loadedBuild.current ??= s.build;
+      if (s.build && s.build !== loadedBuild.current) setUpdated(true);
     };
     events.onerror = () => {
       setConnected(false);
@@ -555,6 +560,7 @@ export function App() {
           onError={toast.error}
           fresh={fresh}
           update={snap?.update || null}
+          updated={updated}
           workspace={workspace}
           workspaces={snap?.workspaces || []}
           onSwitch={switchTo}
